@@ -11,7 +11,8 @@
     "db:migrate": "node --env-file=.env node_modules/drizzle-kit/bin.cjs migrate",
     "test": "vitest run",
     "seed": "tsx --env-file=.env scripts/seed.ts",
-    "seed:dev": "tsx --env-file=.env scripts/seed-dev.ts"
+    "seed:dev": "tsx --env-file=.env scripts/seed-dev.ts",
+    "dev:local": "tsx scripts/dev-local.ts"
   },
   "dependencies": {
     "@expo-google-fonts/noto-sans-kr": "^0.4.4",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.14",
+    "@electric-sql/pglite-socket": "^0.2.17",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",
