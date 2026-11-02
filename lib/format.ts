@@ -13,6 +13,11 @@ export function formatPercent(value: number | null): string {
   return `${value.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%`;
 }
 
+// 한국 시간 기준 "2026-11-02 16:05"
+export function formatDateTime(value: Date | string): string {
+  return new Date(value).toLocaleString("sv-SE", { timeZone: "Asia/Seoul" }).slice(0, 16);
+}
+
 export function formatMonthLabel(yearMonth: string): string {
   return `${Number(yearMonth.slice(5, 7))}월`;
 }
