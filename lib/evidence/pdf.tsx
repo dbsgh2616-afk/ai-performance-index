@@ -163,14 +163,18 @@ function EvidenceDocument({ report }: { report: EvidenceReport }) {
         <Text style={styles.h2}>설문 설정값 근거 (반기별)</Text>
         <Table
           columns={[
-            { label: "서비스", flex: 2 },
-            { label: "적용 반기", flex: 2 },
-            { label: "업무절감시간(분)", flex: 1.4, align: "right" },
-            { label: "업무기여도(%)", flex: 1.2, align: "right" },
-            { label: "보정계수", flex: 1, align: "right" },
-            { label: "출처", flex: 3 },
-            { label: "입력자", flex: 1.4 },
-            { label: "입력 일시", flex: 1.8 },
+            { label: "서비스", flex: 1.6 },
+            { label: "적용 반기", flex: 1.7 },
+            { label: "절감시간(분)", flex: 1, align: "right" },
+            { label: "기여도(%)", flex: 0.9, align: "right" },
+            { label: "보정", flex: 0.7, align: "right" },
+            { label: "응답자/대상", flex: 1.5 },
+            { label: "응답률", flex: 0.9, align: "right" },
+            { label: "조사 기간", flex: 2 },
+            { label: "집계", flex: 1 },
+            { label: "출처", flex: 2.6 },
+            { label: "입력자", flex: 1.1 },
+            { label: "입력 일시", flex: 1.5 },
           ]}
           rows={report.settings.map((row) => [
             row.serviceName,
@@ -178,6 +182,10 @@ function EvidenceDocument({ report }: { report: EvidenceReport }) {
             String(row.savedMinutes),
             String(row.contributionPct),
             String(row.correctionFactor),
+            row.respondents,
+            row.responseRate,
+            row.surveyPeriod,
+            row.aggregation,
             row.source,
             row.enteredByName,
             row.enteredAt,

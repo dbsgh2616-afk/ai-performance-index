@@ -5,6 +5,7 @@ import {
   bigint,
   boolean,
   check,
+  date,
   integer,
   numeric,
   pgEnum,
@@ -23,6 +24,9 @@ export const evidenceGradeEnum = pgEnum("evidence_grade", ["실측", "설문 추
 
 // 반기: H1 = 1~6월(상반기), H2 = 7~12월(하반기)
 export const halfEnum = pgEnum("half", ["H1", "H2"]);
+
+// 설문 값을 하나로 모으는 방법: 평균 / 중앙값 / 절사평균(양 끝 값을 잘라낸 평균)
+export const aggregationEnum = pgEnum("aggregation_method", ["mean", "median", "trimmed_mean"]);
 
 // 변경 이력의 대상 종류
 export const changeTargetEnum = pgEnum("change_target", [
@@ -139,6 +143,13 @@ export const surveySettings = pgTable(
       .notNull()
       .default(1),
     evidenceGrade: evidenceGradeEnum("evidence_grade").notNull().default("설문 추정"),
+    // 설문 정보: 이 값이 몇 명의 어떤 조사에서 나왔는지 남긴다. (설문 값을 데이터로 쓸 수 있는 근거)
+    respondentCount: integer("respondent_count"), // 응답자 수
+    targetCount: integer("target_count"), // 대상 인원(전체 이용자 수). 응답률 = 응답자 수 ÷ 대상 인원
+    surveyStart: date("survey_start", { mode: "string" }), // 조사 시작일
+    surveyEnd: date("survey_end", { mode: "string" }), // 조사 종료일
+    aggregation: aggregationEnum("aggregation"), // 집계 방식
+    questionText: text("question_text"), // 설문 문항 원문
     source: text("source"),
     // 로그인 정보에서 자동으로 채운다. 비어 있을 수 없다.
     enteredById: integer("entered_by_id").notNull(),
@@ -157,6 +168,16 @@ export const surveySettings = pgTable(
     check("survey_settings_saved_minutes_ck", sql`${t.savedMinutes} >= 0`),
     check("survey_settings_contribution_ck", sql`${t.contributionPct} BETWEEN 0 AND 100`),
     check("survey_settings_correction_ck", sql`${t.correctionFactor} > 0`),
+    check("survey_settings_respondent_ck", sql`${t.respondentCount} IS NULL OR ${t.respondentCount} >= 0`),
+    check("survey_settings_target_ck", sql`${t.targetCount} IS NULL OR ${t.targetCount} > 0`),
+    check(
+      "survey_settings_response_ck",
+      sql`${t.respondentCount} IS NULL OR ${t.targetCount} IS NULL OR ${t.respondentCount} <= ${t.targetCount}`,
+    ),
+    check(
+      "survey_settings_period_ck",
+      sql`${t.surveyStart} IS NULL OR ${t.surveyEnd} IS NULL OR ${t.surveyEnd} >= ${t.surveyStart}`,
+    ),
   ],
 );
 

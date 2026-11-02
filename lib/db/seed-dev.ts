@@ -1,11 +1,45 @@
-// 개발용 시험 데이터. 운영 DB에는 넣지 않는다. (DESIGN 10.3)
-// 화면을 만들고 확인할 때 쓰는 값이며, 실제 성과 수치가 아니다.
+// 개발용·시연용 데이터. 운영 DB에는 넣지 않는다. (DESIGN 10.3)
+// 화면을 확인하고 시연할 때 쓰는 임의의 값이며, 실제 성과 수치가 아니다. 출처 칸에도 그렇게 적는다.
+// 서비스별 규모를 다르게 잡아, 연간 누적 점수 순위가 KOBI+ > KOBI > 국유변화탐지 > 온비드 AI요약 > 성과나침반 > 슈퍼로이어가 되게 했다.
 import { asc, eq } from "drizzle-orm";
 
 import { accounts, monthlyInputs, services, surveySettings } from "./schema";
 import type { AppDb } from "./types";
 
-const DEV_MONTHS = ["2026-09", "2026-10", "2026-11"] as const;
+export const DEV_YEAR = 2026;
+export const DEV_LAST_MONTH = 11; // 1~11월 입력
+export const DEV_SOURCE = "시연용 임의 값";
+
+type DevProfile = {
+  name: string;
+  baseCalls: number; // 1월 호출횟수
+  minutes: [number, number]; // 건당 업무절감시간(분): [상반기, 하반기]
+  contribution: [number, number]; // 업무기여도(%): [상반기, 하반기]
+  correction: number;
+  targetCount: number; // 설문 대상 인원
+  respondents: [number, number]; // 응답자 수: [상반기, 하반기]
+  aggregation: "mean" | "median" | "trimmed_mean";
+};
+
+// 서비스 순서(sort_order)와 같은 순서다: KOBI, KOBI+, 국유변화탐지, 슈퍼로이어, 성과나침반, 온비드 AI요약
+export const DEV_PROFILES: DevProfile[] = [
+  { name: "KOBI", baseCalls: 8200, minutes: [6.0, 6.3], contribution: [78, 80], correction: 1, targetCount: 420, respondents: [188, 201], aggregation: "median" },
+  { name: "KOBI+", baseCalls: 11500, minutes: [5.5, 5.8], contribution: [82, 84], correction: 0.9, targetCount: 260, respondents: [131, 142], aggregation: "median" },
+  { name: "국유변화탐지", baseCalls: 2100, minutes: [22, 23], contribution: [70, 72], correction: 1, targetCount: 85, respondents: [52, 58], aggregation: "trimmed_mean" },
+  { name: "슈퍼로이어", baseCalls: 900, minutes: [12, 12.5], contribution: [60, 62], correction: 1, targetCount: 120, respondents: [43, 51], aggregation: "mean" },
+  { name: "성과나침반", baseCalls: 1300, minutes: [9, 9.4], contribution: [68, 70], correction: 1, targetCount: 150, respondents: [71, 80], aggregation: "trimmed_mean" },
+  { name: "온비드 AI요약", baseCalls: 5200, minutes: [4, 4.2], contribution: [72, 74], correction: 1, targetCount: 310, respondents: [124, 139], aggregation: "median" },
+];
+
+const WOBBLE = [0.02, -0.03, 0.01, 0.03, -0.02, 0];
+
+// 달(1~12)별 호출횟수: 조금씩 늘어나고 달마다 작게 흔들린다.
+export function devCallCount(profile: DevProfile, month: number): number {
+  return Math.round(profile.baseCalls * (1 + 0.035 * (month - 1)) * (1 + WOBBLE[month % WOBBLE.length]));
+}
+
+const QUESTION =
+  "AI 서비스를 사용한 뒤 업무 1건당 절감된 시간(분)과, 업무 결과에 대한 AI의 기여도(%)를 응답해 주세요.";
 
 export type DevSeedResult = {
   monthlyInputCount: number;
@@ -28,31 +62,42 @@ export async function seedDev(db: AppDb): Promise<DevSeedResult> {
     throw new Error("서비스가 없습니다. 먼저 npm run seed를 실행하세요.");
   }
 
-  const inputRows = serviceRows.flatMap((service, serviceIndex) =>
-    DEV_MONTHS.map((yearMonth, monthIndex) => ({
-      serviceId: service.id,
-      yearMonth,
-      callCount: 1000 * (serviceIndex + 1) + 150 * monthIndex,
-      source: "개발용 시험 데이터",
-      enteredById: admin.id,
-      enteredByName: admin.name,
-    })),
-  );
+  const inputRows = serviceRows.flatMap((service, index) => {
+    const profile = DEV_PROFILES[index % DEV_PROFILES.length];
+    return Array.from({ length: DEV_LAST_MONTH }, (_, offset) => {
+      const month = offset + 1;
+      return {
+        serviceId: service.id,
+        yearMonth: `${DEV_YEAR}-${String(month).padStart(2, "0")}`,
+        callCount: devCallCount(profile, month),
+        source: DEV_SOURCE,
+        enteredById: admin.id,
+        enteredByName: admin.name,
+      };
+    });
+  });
   await db.insert(monthlyInputs).values(inputRows).onConflictDoNothing();
 
-  const settingRows = serviceRows.flatMap((service, serviceIndex) =>
-    (["H1", "H2"] as const).map((half) => ({
+  const settingRows = serviceRows.flatMap((service, index) => {
+    const profile = DEV_PROFILES[index % DEV_PROFILES.length];
+    return (["H1", "H2"] as const).map((half, halfIndex) => ({
       serviceId: service.id,
-      year: 2026,
+      year: DEV_YEAR,
       half,
-      savedMinutes: 5 + serviceIndex,
-      contributionPct: 90 - serviceIndex * 5,
-      correctionFactor: 1,
-      source: "개발용 시험 설문",
+      savedMinutes: profile.minutes[halfIndex],
+      contributionPct: profile.contribution[halfIndex],
+      correctionFactor: profile.correction,
+      respondentCount: profile.respondents[halfIndex],
+      targetCount: profile.targetCount,
+      surveyStart: halfIndex === 0 ? `${DEV_YEAR}-06-01` : `${DEV_YEAR}-12-01`,
+      surveyEnd: halfIndex === 0 ? `${DEV_YEAR}-06-12` : `${DEV_YEAR}-12-12`,
+      aggregation: profile.aggregation,
+      questionText: QUESTION,
+      source: `${DEV_YEAR}년 ${halfIndex === 0 ? "상반기" : "하반기"} 이용자 설문 (${DEV_SOURCE})`,
       enteredById: admin.id,
       enteredByName: admin.name,
-    })),
-  );
+    }));
+  });
   await db.insert(surveySettings).values(settingRows).onConflictDoNothing();
 
   return { monthlyInputCount: inputRows.length, settingCount: settingRows.length };

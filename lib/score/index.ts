@@ -1,6 +1,8 @@
 // Design Ref: §5.2 지수 계산 순서 — 화면과 DB를 모르는 순수 함수다. 대시보드와 증적자료가 같은 함수를 쓴다.
 // Plan SC: FR-01 산식, FR-02 보안사고 감점, FR-03 월별·연간, FR-05 설문 추정 비중, FR-06 데이터 없음, FR-09 반기별 설정값
 
+import type { SurveyInfo } from "../survey";
+
 export type EvidenceGrade = "실측" | "설문 추정";
 export type Half = "H1" | "H2";
 
@@ -23,6 +25,7 @@ export type ScoreSetting = {
   contributionPct: number;
   correctionFactor: number;
   evidenceGrade: EvidenceGrade;
+  survey?: SurveyInfo; // 설문 정보(응답자 수, 조사 기간 등). 계산에는 쓰지 않고 근거로 보여준다.
 };
 
 export type ScoreData = {
@@ -140,6 +143,48 @@ export function calculateMonth(data: ScoreData, yearMonth: string): MonthScore {
     missingServiceCount,
     surveyShare: toPercent(survey, valueCount),
   };
+}
+
+export type ServiceRank = {
+  serviceId: number;
+  serviceName: string;
+  annualScore: number; // 점수가 계산된 달의 합
+  monthsCounted: number;
+  rank: number | null; // 계산된 달이 없으면 null
+  barPercent: number; // 1위 대비 비율(막대 길이)
+};
+
+// 서비스별 연간 누적 점수 순위. 합계가 아니라 서비스 점수를 기준으로 하므로, 월 합계가 "데이터 없음"이어도 순위는 나온다.
+export function rankServices(year: YearScore): ServiceRank[] {
+  const services = year.months[0]?.services ?? [];
+
+  const totals = services.map((service, index) => {
+    const scores = year.months
+      .map((month) => month.services[index].score)
+      .filter((score): score is number => score !== null);
+    return {
+      serviceId: service.serviceId,
+      serviceName: service.serviceName,
+      annualScore: scores.reduce((sum, score) => sum + score, 0),
+      monthsCounted: scores.length,
+    };
+  });
+
+  const ranked = totals
+    .filter((row) => row.monthsCounted > 0)
+    .sort((a, b) => b.annualScore - a.annualScore);
+  const top = ranked[0]?.annualScore ?? 0;
+
+  return [
+    ...ranked.map((row, index) => ({
+      ...row,
+      rank: index + 1,
+      barPercent: top === 0 ? 0 : (row.annualScore / top) * 100,
+    })),
+    ...totals
+      .filter((row) => row.monthsCounted === 0)
+      .map((row) => ({ ...row, rank: null, barPercent: 0 })),
+  ];
 }
 
 export function calculateYear(data: ScoreData): YearScore {

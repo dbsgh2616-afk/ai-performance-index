@@ -94,6 +94,32 @@ describe("DB 제약조건", () => {
     await expect(db.insert(surveySettings).values({ ...base, correctionFactor: 0 })).rejects.toThrow();
   });
 
+  it("설문 정보는 응답자가 대상 인원을 넘지 못하고, 조사 종료일이 시작일보다 앞설 수 없다", async () => {
+    const [service] = await db.select().from(services).limit(1);
+    const [admin] = await db.select().from(accounts).limit(1);
+    const base = {
+      serviceId: service.id,
+      year: 2031,
+      half: "H1" as const,
+      savedMinutes: 5,
+      contributionPct: 90,
+      correctionFactor: 1,
+      respondentCount: 50,
+      targetCount: 100,
+      surveyStart: "2031-06-01",
+      surveyEnd: "2031-06-10",
+      aggregation: "median" as const,
+      enteredById: admin.id,
+      enteredByName: admin.name,
+    };
+    await expect(db.insert(surveySettings).values({ ...base, respondentCount: 101 })).rejects.toThrow();
+    await expect(db.insert(surveySettings).values({ ...base, targetCount: 0 })).rejects.toThrow();
+    await expect(db.insert(surveySettings).values({ ...base, surveyEnd: "2031-05-30" })).rejects.toThrow();
+    await db.insert(surveySettings).values(base);
+    const [saved] = await db.select().from(surveySettings).where(eq(surveySettings.year, 2031));
+    expect(saved).toMatchObject({ respondentCount: 50, targetCount: 100, surveyStart: "2031-06-01", aggregation: "median" });
+  });
+
   it("입력자 번호는 계정과 연결되지 않아, 계정을 지워도 기록이 남는다", async () => {
     const [service] = await db.select().from(services).limit(1);
     await db.insert(accounts).values({
@@ -139,5 +165,8 @@ describe("개발용 시드", () => {
     expect(again.settingCount).toBe(12);
     const rows = await db.select().from(surveySettings).where(eq(surveySettings.year, 2026));
     expect(rows).toHaveLength(12);
+    expect(result.monthlyInputCount).toBe(66); // 서비스 6개 × 1~11월
+    // 설문 정보(응답자 수, 대상 인원, 조사 기간, 집계 방식)가 모두 들어 있다.
+    expect(rows.every((row) => row.respondentCount && row.targetCount && row.surveyStart && row.surveyEnd && row.aggregation)).toBe(true);
   });
 });

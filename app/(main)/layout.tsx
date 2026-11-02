@@ -7,7 +7,7 @@ import { NavBar, NavBarFallback } from "@/components/NavBar";
 export default function MainLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-1 flex-col">
-      <header className="border-b border-black/10 px-6 py-3 dark:border-white/15">
+      <header className="border-b border-black/10 bg-white px-6 py-3 dark:border-white/15 dark:bg-zinc-950">
         <Suspense fallback={<NavBarFallback />}>
           <NavBar />
         </Suspense>

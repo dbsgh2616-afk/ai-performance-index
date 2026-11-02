@@ -7,6 +7,7 @@ import { recordChanges } from "./changelog";
 import { monthlyInputs, monthlySecurity, services, surveySettings } from "./db/schema";
 import type { AppDb } from "./db/types";
 import type { Half } from "./score";
+import type { Aggregation } from "./survey";
 import type { MonthlyFormData, SettingsFormData } from "./validation/inputs";
 
 export type Actor = { id: number; name: string };
@@ -135,6 +136,12 @@ export async function saveSurveySettings(
         saved_minutes: row.savedMinutes,
         contribution_pct: row.contributionPct,
         correction_factor: row.correctionFactor,
+        respondent_count: row.respondentCount,
+        target_count: row.targetCount,
+        survey_start: row.surveyStart,
+        survey_end: row.surveyEnd,
+        aggregation: row.aggregation,
+        question_text: row.questionText,
         source: row.source,
       };
 
@@ -146,6 +153,12 @@ export async function saveSurveySettings(
           savedMinutes: row.savedMinutes,
           contributionPct: row.contributionPct,
           correctionFactor: row.correctionFactor,
+          respondentCount: row.respondentCount,
+          targetCount: row.targetCount,
+          surveyStart: row.surveyStart,
+          surveyEnd: row.surveyEnd,
+          aggregation: row.aggregation,
+          questionText: row.questionText,
           source: row.source,
           enteredById: actor.id,
           enteredByName: actor.name,
@@ -164,6 +177,12 @@ export async function saveSurveySettings(
         saved_minutes: existing.savedMinutes,
         contribution_pct: existing.contributionPct,
         correction_factor: existing.correctionFactor,
+        respondent_count: existing.respondentCount,
+        target_count: existing.targetCount,
+        survey_start: existing.surveyStart,
+        survey_end: existing.surveyEnd,
+        aggregation: existing.aggregation,
+        question_text: existing.questionText,
         source: existing.source,
       };
       const unchanged = (Object.keys(after) as (keyof typeof after)[]).every((key) => before[key] === after[key]);
@@ -175,6 +194,12 @@ export async function saveSurveySettings(
           savedMinutes: row.savedMinutes,
           contributionPct: row.contributionPct,
           correctionFactor: row.correctionFactor,
+          respondentCount: row.respondentCount,
+          targetCount: row.targetCount,
+          surveyStart: row.surveyStart,
+          surveyEnd: row.surveyEnd,
+          aggregation: row.aggregation,
+          questionText: row.questionText,
           source: row.source,
           enteredById: actor.id,
           enteredByName: actor.name,
@@ -236,6 +261,12 @@ export type SettingsFormRow = {
   savedMinutes: number | null;
   contributionPct: number | null;
   correctionFactor: number | null;
+  respondentCount: number | null;
+  targetCount: number | null;
+  surveyStart: string | null;
+  surveyEnd: string | null;
+  aggregation: Aggregation | null;
+  questionText: string | null;
   source: string | null;
   enteredByName: string | null;
   enteredAt: Date | null;
@@ -258,6 +289,12 @@ export async function loadSettingsForm(db: AppDb, year: number, half: Half): Pro
       savedMinutes: setting?.savedMinutes ?? null,
       contributionPct: setting?.contributionPct ?? null,
       correctionFactor: setting?.correctionFactor ?? null,
+      respondentCount: setting?.respondentCount ?? null,
+      targetCount: setting?.targetCount ?? null,
+      surveyStart: setting?.surveyStart ?? null,
+      surveyEnd: setting?.surveyEnd ?? null,
+      aggregation: setting?.aggregation ?? null,
+      questionText: setting?.questionText ?? null,
       source: setting?.source ?? null,
       enteredByName: setting?.enteredByName ?? null,
       enteredAt: setting?.enteredAt ?? null,

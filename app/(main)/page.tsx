@@ -64,11 +64,13 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
 
       <DashboardView
         yearScore={yearScore}
+        settings={data.settings}
+        serviceNames={Object.fromEntries(data.services.map((service) => [service.id, service.name]))}
         focusMonth={focusMonth}
         focusLabel={focusLabel}
         isAdmin={user.role === "admin"}
+        chart={<ScoreChart rows={chartRows} serviceNames={data.services.map((service) => service.name)} />}
       />
-      <ScoreChart rows={chartRows} serviceNames={data.services.map((service) => service.name)} />
     </div>
   );
 }

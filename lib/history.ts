@@ -29,6 +29,7 @@ export type HistoryRow = {
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const ROLE_LABELS: Record<string, string> = { admin: "관리자", viewer: "조회자" };
+const AGGREGATION_LABELS: Record<string, string> = { mean: "평균", median: "중앙값", trimmed_mean: "절사평균" };
 
 function startOfDayKst(date: string): Date {
   return new Date(`${date}T00:00:00+09:00`);
@@ -68,8 +69,12 @@ export async function loadHistory(db: AppDb, filter: HistoryFilter = {}): Promis
       object = `${nameOf.get(serviceId) ?? `서비스 ${serviceId}`} ${period ?? ""}`.trim();
     }
 
-    const display = (value: string | null) =>
-      value === null ? "-" : row.fieldName === "role" ? (ROLE_LABELS[value] ?? value) : value;
+    const display = (value: string | null) => {
+      if (value === null) return "-";
+      if (row.fieldName === "role") return ROLE_LABELS[value] ?? value;
+      if (row.fieldName === "aggregation") return AGGREGATION_LABELS[value] ?? value;
+      return value;
+    };
 
     return {
       id: row.id,
