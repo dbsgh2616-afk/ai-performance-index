@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 지울 파일을 임시로 옮겨 두는 폴더(CLAUDE.md 규칙)는 검사하지 않는다.
+    "trash-can/**",
   ]),
 ]);
 
