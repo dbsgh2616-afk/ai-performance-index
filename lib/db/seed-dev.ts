@@ -23,12 +23,12 @@ type DevProfile = {
 
 // 서비스 순서(sort_order)와 같은 순서다: KOBI, KOBI+, 국유변화탐지, 슈퍼로이어, 성과나침반, 온비드 AI요약
 export const DEV_PROFILES: DevProfile[] = [
-  { name: "KOBI", baseCalls: 8200, minutes: [6.0, 6.3], contribution: [78, 80], correction: 1, targetCount: 420, respondents: [188, 201], aggregation: "median" },
-  { name: "KOBI+", baseCalls: 11500, minutes: [5.5, 5.8], contribution: [82, 84], correction: 0.9, targetCount: 260, respondents: [131, 142], aggregation: "median" },
-  { name: "국유변화탐지", baseCalls: 2100, minutes: [22, 23], contribution: [70, 72], correction: 1, targetCount: 85, respondents: [52, 58], aggregation: "trimmed_mean" },
-  { name: "슈퍼로이어", baseCalls: 900, minutes: [12, 12.5], contribution: [60, 62], correction: 1, targetCount: 120, respondents: [43, 51], aggregation: "mean" },
-  { name: "성과나침반", baseCalls: 1300, minutes: [9, 9.4], contribution: [68, 70], correction: 1, targetCount: 150, respondents: [71, 80], aggregation: "trimmed_mean" },
-  { name: "온비드 AI요약", baseCalls: 5200, minutes: [4, 4.2], contribution: [72, 74], correction: 1, targetCount: 310, respondents: [124, 139], aggregation: "median" },
+  { name: "KOBI", baseCalls: 410, minutes: [6.0, 6.3], contribution: [78, 80], correction: 1, targetCount: 420, respondents: [188, 201], aggregation: "median" },
+  { name: "KOBI+", baseCalls: 575, minutes: [5.5, 5.8], contribution: [82, 84], correction: 0.9, targetCount: 260, respondents: [131, 142], aggregation: "median" },
+  { name: "국유변화탐지", baseCalls: 105, minutes: [22, 23], contribution: [70, 72], correction: 1, targetCount: 85, respondents: [52, 58], aggregation: "trimmed_mean" },
+  { name: "슈퍼로이어", baseCalls: 45, minutes: [12, 12.5], contribution: [60, 62], correction: 1, targetCount: 120, respondents: [43, 51], aggregation: "mean" },
+  { name: "성과나침반", baseCalls: 65, minutes: [9, 9.4], contribution: [68, 70], correction: 1, targetCount: 150, respondents: [71, 80], aggregation: "trimmed_mean" },
+  { name: "온비드 AI요약", baseCalls: 260, minutes: [4, 4.2], contribution: [72, 74], correction: 1, targetCount: 310, respondents: [124, 139], aggregation: "median" },
 ];
 
 const WOBBLE = [0.02, -0.03, 0.01, 0.03, -0.02, 0];

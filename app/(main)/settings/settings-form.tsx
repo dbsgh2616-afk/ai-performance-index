@@ -12,7 +12,7 @@ import { saveSettingsAction } from "./actions";
 
 const initialState: FormState = {};
 const inputClass =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900";
+  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950";
 const labelClass = "flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400";
 
 function toText(value: number | null): string {
@@ -30,7 +30,7 @@ function ServiceCard({ row }: { row: SettingsFormRow }) {
   );
 
   return (
-    <fieldset className="flex flex-col gap-5 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <fieldset className="flex flex-col gap-5 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <legend className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
         {row.serviceName}
       </legend>

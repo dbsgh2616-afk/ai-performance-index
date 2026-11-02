@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
+/* 어두운 화면이 기본이다. <html class="dark">일 때 dark: 클래스가 적용된다. (app/layout.tsx) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #f4f5f7;
-  --foreground: #171717;
+  --background: #0b0e14;
+  --foreground: #e4e4e7;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -10,13 +14,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

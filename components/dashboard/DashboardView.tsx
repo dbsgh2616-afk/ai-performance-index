@@ -24,7 +24,7 @@ type Props = {
 };
 
 const cardClass =
-  "rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950";
+  "rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
 
 function GradeBadge({ grade, label }: { grade: EvidenceGrade | null; label: string }) {
   if (!grade) return null;
@@ -142,7 +142,7 @@ function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
           <table className="w-full border-collapse text-left text-sm tabular-nums">
             <thead>
               <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
-                <th className="sticky left-0 bg-white py-2 pr-3 font-medium dark:bg-zinc-950">서비스</th>
+                <th className="sticky left-0 bg-white py-2 pr-3 font-medium dark:bg-zinc-900">서비스</th>
                 {activeMonths.map((month) => (
                   <th key={month.yearMonth} className="px-2 py-2 text-right font-medium">
                     {formatMonthLabel(month.yearMonth)}
@@ -153,7 +153,7 @@ function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
             <tbody>
               {services.map((service, index) => (
                 <tr key={service.serviceId} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="sticky left-0 bg-white py-2.5 pr-3 font-medium dark:bg-zinc-950">{service.serviceName}</td>
+                  <td className="sticky left-0 bg-white py-2.5 pr-3 font-medium dark:bg-zinc-900">{service.serviceName}</td>
                   {activeMonths.map((month) => {
                     const cell = month.services[index];
                     return (
@@ -174,8 +174,8 @@ function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
                   })}
                 </tr>
               ))}
-              <tr className="bg-zinc-50 font-bold dark:bg-zinc-900">
-                <td className="sticky left-0 bg-zinc-50 py-2.5 pr-3 dark:bg-zinc-900">합계</td>
+              <tr className="bg-zinc-50 font-bold dark:bg-zinc-800">
+                <td className="sticky left-0 bg-zinc-50 py-2.5 pr-3 dark:bg-zinc-800">합계</td>
                 {activeMonths.map((month) => (
                   <td key={month.yearMonth} className="px-2 py-2.5 text-right align-top">
                     {month.total === null ? (
