@@ -133,7 +133,7 @@ describe("변경 이력 조회", () => {
 
     const inputs = await loadHistory(db, { target: "monthly_input" });
     expect(inputs[0]).toMatchObject({ field: expect.any(String), changedByName: "입력자" });
-    expect(inputs[0].object).toContain("AI 서비스 1");
+    expect(inputs[0].object).toContain("KOBI");
   });
 
   it("기간으로 걸러진다 (한국 시간 기준)", async () => {
