@@ -33,25 +33,40 @@ export const changeTargetEnum = pgEnum("change_target", [
 ]);
 
 // AI 서비스 6개. 추가·삭제 기능은 만들지 않는다. (PRD 6번)
-export const services = pgTable("services", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  sortOrder: integer("sort_order").notNull(),
-});
+// 순서 번호를 1~6으로 막고 겹치지 않게 해서, 서비스가 6개를 넘지 못하게 한다.
+export const services = pgTable(
+  "services",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull().unique(),
+    sortOrder: integer("sort_order").notNull(),
+  },
+  (t) => [
+    unique("services_sort_order_uq").on(t.sortOrder),
+    check("services_sort_order_ck", sql`${t.sortOrder} BETWEEN 1 AND 6`),
+  ],
+);
 
 // 계정. 비밀번호는 원문이 아니라 섞은 값(해시)만 저장한다. (PRD 7번)
-export const accounts = pgTable("accounts", {
-  id: serial("id").primaryKey(),
-  loginId: text("login_id").notNull().unique(),
-  name: text("name").notNull(),
-  role: roleEnum("role").notNull(),
-  passwordHash: text("password_hash").notNull(),
-  failedCount: integer("failed_count").notNull().default(0),
-  lockedUntil: timestamp("locked_until", { withTimezone: true }),
-  // 비밀번호 재설정·계정 삭제 시 올려서 열려 있던 세션을 끊는다.
-  sessionVersion: integer("session_version").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: serial("id").primaryKey(),
+    loginId: text("login_id").notNull().unique(),
+    name: text("name").notNull(),
+    role: roleEnum("role").notNull(),
+    passwordHash: text("password_hash").notNull(),
+    failedCount: integer("failed_count").notNull().default(0),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
+    // 비밀번호 재설정·계정 삭제 시 올려서 열려 있던 세션을 끊는다.
+    sessionVersion: integer("session_version").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("accounts_failed_count_ck", sql`${t.failedCount} >= 0`),
+    check("accounts_session_version_ck", sql`${t.sessionVersion} >= 0`),
+  ],
+);
 
 // 서비스+월마다 1줄. 입력자 번호(entered_by_id)는 계정과 연결하지 않는다.
 // 계정을 진짜 삭제해도 입력 기록이 남아야 하기 때문이다. 이름은 따로 복사해 저장한다.
@@ -66,13 +81,18 @@ export const monthlyInputs = pgTable(
     callCount: bigint("call_count", { mode: "number" }).notNull(),
     evidenceGrade: evidenceGradeEnum("evidence_grade").notNull().default("실측"),
     source: text("source"), // 출처가 없으면 증적자료에 "근거 미확인"으로 표시한다.
-    enteredById: integer("entered_by_id"),
+    // 로그인 정보에서 자동으로 채운다. 비어 있을 수 없다.
+    enteredById: integer("entered_by_id").notNull(),
     enteredByName: text("entered_by_name").notNull(),
-    enteredAt: timestamp("entered_at", { withTimezone: true }).notNull().defaultNow(),
+    // 처음 저장할 때 현재 시각이 들어가고, drizzle로 수정할 때마다 자동으로 갱신된다. (최종 수정 시각)
+    enteredAt: timestamp("entered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     unique("monthly_inputs_service_month_uq").on(t.serviceId, t.yearMonth),
-    check("monthly_inputs_year_month_ck", sql`${t.yearMonth} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`),
+    check("monthly_inputs_year_month_ck", sql`${t.yearMonth} ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$'`),
     check("monthly_inputs_call_count_ck", sql`${t.callCount} >= 0`),
     // 호출횟수는 실측만 입력한다. (DESIGN 6.2)
     check("monthly_inputs_grade_ck", sql`${t.evidenceGrade} = '실측'`),
@@ -87,12 +107,17 @@ export const monthlySecurity = pgTable(
     yearMonth: text("year_month").primaryKey(),
     incident: boolean("incident").notNull().default(false),
     source: text("source"),
-    enteredById: integer("entered_by_id"),
+    // 로그인 정보에서 자동으로 채운다. 비어 있을 수 없다.
+    enteredById: integer("entered_by_id").notNull(),
     enteredByName: text("entered_by_name").notNull(),
-    enteredAt: timestamp("entered_at", { withTimezone: true }).notNull().defaultNow(),
+    // 처음 저장할 때 현재 시각이 들어가고, drizzle로 수정할 때마다 자동으로 갱신된다. (최종 수정 시각)
+    enteredAt: timestamp("entered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
-    check("monthly_security_year_month_ck", sql`${t.yearMonth} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`),
+    check("monthly_security_year_month_ck", sql`${t.yearMonth} ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$'`),
   ],
 );
 
@@ -115,13 +140,20 @@ export const surveySettings = pgTable(
       .default(1),
     evidenceGrade: evidenceGradeEnum("evidence_grade").notNull().default("설문 추정"),
     source: text("source"),
-    enteredById: integer("entered_by_id"),
+    // 로그인 정보에서 자동으로 채운다. 비어 있을 수 없다.
+    enteredById: integer("entered_by_id").notNull(),
     enteredByName: text("entered_by_name").notNull(),
-    enteredAt: timestamp("entered_at", { withTimezone: true }).notNull().defaultNow(),
+    // 처음 저장할 때 현재 시각이 들어가고, drizzle로 수정할 때마다 자동으로 갱신된다. (최종 수정 시각)
+    enteredAt: timestamp("entered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     unique("survey_settings_service_period_uq").on(t.serviceId, t.year, t.half),
-    check("survey_settings_year_ck", sql`${t.year} BETWEEN 2000 AND 2100`),
+    check("survey_settings_year_ck", sql`${t.year} BETWEEN 2000 AND 2099`),
+    // 설문 값은 "설문 추정"만 입력한다. (DESIGN 6.2)
+    check("survey_settings_grade_ck", sql`${t.evidenceGrade} = '설문 추정'`),
     check("survey_settings_saved_minutes_ck", sql`${t.savedMinutes} >= 0`),
     check("survey_settings_contribution_ck", sql`${t.contributionPct} BETWEEN 0 AND 100`),
     check("survey_settings_correction_ck", sql`${t.correctionFactor} > 0`),

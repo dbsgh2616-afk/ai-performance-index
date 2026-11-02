@@ -8,6 +8,20 @@
       "when": 1793602016757,
       "tag": "0000_reflective_lizard",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793602823573,
+      "tag": "0001_schema_fixes",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793602824943,
+      "tag": "0002_change_logs_append_only",
+      "breakpoints": true
     }
   ]
 }
