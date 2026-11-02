@@ -7,6 +7,10 @@ export const FIELD_LABELS: Record<string, string> = {
   contribution_pct: "업무기여도(%)",
   correction_factor: "보정계수",
   evidence_grade: "근거 등급",
+  login_id: "아이디",
+  name: "이름",
+  role: "권한",
+  password: "비밀번호",
 };
 
 export const TARGET_LABELS: Record<string, string> = {

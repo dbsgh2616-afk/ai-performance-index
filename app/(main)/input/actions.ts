@@ -1,6 +1,8 @@
 "use server";
 
 // Design Ref: §7 서버 기능 — 월 입력 저장, 보안사고 저장 (관리자만)
+import { revalidatePath } from "next/cache";
+
 import { requireAdmin } from "@/lib/auth/guard";
 import { getDb } from "@/lib/db";
 import { services } from "@/lib/db/schema";
@@ -19,6 +21,8 @@ export async function saveMonthlyAction(_prev: FormState, formData: FormData): P
     if (!parsed.ok) return { ok: false, message: parsed.error };
 
     const { changes } = await saveMonthlyInputs(db, parsed.data, { id: admin.id, name: admin.name });
+    // 대시보드·입력 화면의 숫자가 바로 바뀌도록 화면을 새로 만든다. (입력 즉시 반영)
+    revalidatePath("/", "layout");
     return {
       ok: true,
       message: changes === 0 ? "바뀐 값이 없습니다." : `저장했습니다. (변경 ${changes}건, 변경 이력에 기록됨)`,

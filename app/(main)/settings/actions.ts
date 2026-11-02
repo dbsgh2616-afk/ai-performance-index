@@ -1,6 +1,8 @@
 "use server";
 
 // Design Ref: §7 서버 기능 — 설문 설정값 저장 (관리자만). 해당 반기 값을 덮어쓰고 이전 값은 이력에 남긴다.
+import { revalidatePath } from "next/cache";
+
 import { requireAdmin } from "@/lib/auth/guard";
 import { getDb } from "@/lib/db";
 import { services } from "@/lib/db/schema";
@@ -18,6 +20,8 @@ export async function saveSettingsAction(_prev: FormState, formData: FormData): 
     if (!parsed.ok) return { ok: false, message: parsed.error };
 
     const { changes } = await saveSurveySettings(db, parsed.data, { id: admin.id, name: admin.name });
+    // 선택한 반기의 모든 달 지수가 바로 다시 계산되어 보이도록 화면을 새로 만든다.
+    revalidatePath("/", "layout");
     return {
       ok: true,
       message:
