@@ -84,25 +84,8 @@ body {
   .shooting-star { animation: none; }
 }
 
-/* 배경 장식(components/SpaceScenery.tsx) — 행성은 오른쪽에서 왼쪽으로 천천히, 우주선은 왼쪽에서 오른쪽으로 가끔 지나간다 */
-@keyframes scenery-left {
-  from { transform: translateX(105vw); }
-  to { transform: translateX(-35vw); }
-}
-.scenery-fly-left {
-  animation: scenery-left 120s linear infinite;
-  will-change: transform;
-}
-/* 60초 중 앞의 25%(15초)만 날아가고 나머지는 화면 밖에서 쉰다 */
-@keyframes scenery-cameo {
-  0% { transform: translateX(-25vw); }
-  25%, 100% { transform: translateX(110vw); }
-}
-.scenery-cameo {
-  animation: scenery-cameo 60s linear infinite;
-  transform: translateX(-25vw);
-  will-change: transform;
-}
+/* 행성·우주선은 components/Starfield.tsx(캔버스)가 그린다 */
+
 /* 인프라 계기판 (components/dashboard/InfraCockpit.tsx) */
 /* 조종석 계기판 — 위가 불룩한 곡선(대시보드 윗면) + 그라데이션 테두리 */
 .cockpit-dash {

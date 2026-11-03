@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { SpaceScenery } from "@/components/SpaceScenery";
 import { Starfield } from "@/components/Starfield";
 import "./globals.css";
 
@@ -27,7 +26,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Starfield />
-        <SpaceScenery />
         {children}
       </body>
     </html>
