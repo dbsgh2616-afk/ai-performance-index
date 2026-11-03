@@ -106,7 +106,7 @@ describe("대시보드 화면", () => {
     const html = render(["2026-10"]);
     expect(html).toContain("10월");
     expect(html).toContain("입력이 없는 달: 1월, 2월");
-    expect(html).not.toContain("<th class=\"px-2 py-2 text-right font-medium\">1월</th>");
+    expect(html).not.toContain("<th class=\"px-2 py-1 text-center font-medium\">1월</th>");
   });
 
   it("입력이 하나도 없으면 '데이터 없음' 안내를 보여준다", () => {

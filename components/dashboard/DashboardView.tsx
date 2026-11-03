@@ -11,6 +11,7 @@ import {
   formatResponseRate,
   formatSurveyPeriod,
   NOT_RECORDED,
+  responseRate,
 } from "@/lib/survey";
 
 type Props = {
@@ -25,19 +26,6 @@ type Props = {
 
 const cardClass =
   "rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
-
-function GradeBadge({ grade, label }: { grade: EvidenceGrade | null; label: string }) {
-  if (!grade) return null;
-  const style =
-    grade === "실측"
-      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-      : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200";
-  return (
-    <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium leading-none ${style}`} title={`${label}: ${grade}`}>
-      {grade === "실측" ? "실측" : "설문"}
-    </span>
-  );
-}
 
 function monthNote(month: MonthScore): string | undefined {
   if (month.total === null) {
@@ -126,25 +114,48 @@ function RankingCard({ yearScore }: { yearScore: YearScore }) {
   );
 }
 
+function GradeDot({ grade, label }: { grade: EvidenceGrade | null; label: string }) {
+  if (!grade) return null;
+  const color = grade === "실측" ? "bg-emerald-400" : "bg-amber-400";
+  return <span className={`h-1.5 w-1.5 rounded-full ${color}`} title={`${label}: ${grade}`} />;
+}
+
 function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
   // 입력이 있는 달만 칸으로 보여준다. 빈 달이 표를 가득 채우지 않게 한다.
   const activeMonths = yearScore.months.filter((month) => month.services.some((service) => service.callCount !== null));
   const emptyMonths = yearScore.months.filter((month) => !activeMonths.includes(month));
   const services = yearScore.months[0].services;
+  // 점수가 클수록 칸 배경이 진해지는 히트맵. 가장 큰 칸을 기준으로 한다.
+  const maxScore = Math.max(1, ...activeMonths.flatMap((month) => month.services.map((service) => service.score ?? 0)));
 
   return (
-    <section aria-label="서비스×월 표" className={`${cardClass} flex flex-col gap-3`}>
-      <h2 className="text-lg font-bold">서비스별 월 지수</h2>
+    <section aria-label="서비스×월 표" className={`${cardClass} flex flex-col gap-4`}>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-bold">서비스별 월 지수</h2>
+          <p className="text-xs text-zinc-500">칸이 진할수록 점수가 높습니다.</p>
+        </div>
+        <p className="flex items-center gap-3 text-xs text-zinc-400">
+          <span className="flex items-center gap-1.5">
+            <GradeDot grade="실측" label="범례" />
+            실측
+          </span>
+          <span className="flex items-center gap-1.5">
+            <GradeDot grade="설문 추정" label="범례" />
+            설문
+          </span>
+        </p>
+      </div>
       {activeMonths.length === 0 ? (
         <p className="text-sm text-zinc-500">{NO_DATA} — 아직 입력된 달이 없습니다.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm tabular-nums">
+          <table className="w-full border-separate border-spacing-1 text-sm tabular-nums">
             <thead>
-              <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
-                <th className="sticky left-0 bg-white py-2 pr-3 font-medium dark:bg-zinc-900">서비스</th>
+              <tr className="text-xs text-zinc-400">
+                <th className="px-2 py-1 text-left font-medium">서비스</th>
                 {activeMonths.map((month) => (
-                  <th key={month.yearMonth} className="px-2 py-2 text-right font-medium">
+                  <th key={month.yearMonth} className="px-2 py-1 text-center font-medium">
                     {formatMonthLabel(month.yearMonth)}
                   </th>
                 ))}
@@ -152,41 +163,47 @@ function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
             </thead>
             <tbody>
               {services.map((service, index) => (
-                <tr key={service.serviceId} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="sticky left-0 bg-white py-2.5 pr-3 font-medium dark:bg-zinc-900">{service.serviceName}</td>
+                <tr key={service.serviceId}>
+                  <td className="whitespace-nowrap px-2 py-1 font-medium">{service.serviceName}</td>
                   {activeMonths.map((month) => {
                     const cell = month.services[index];
+                    if (cell.score === null) {
+                      return (
+                        <td key={month.yearMonth} className="rounded-md bg-zinc-800/40 px-2 py-2 text-center text-[11px] text-zinc-500">
+                          {NO_DATA}
+                        </td>
+                      );
+                    }
+                    const alpha = 0.12 + 0.55 * (cell.score / maxScore);
                     return (
-                      <td key={month.yearMonth} className="px-2 py-2.5 text-right align-top">
-                        {cell.score === null ? (
-                          <span className="text-xs text-zinc-400">{NO_DATA}</span>
-                        ) : (
-                          <div className="flex flex-col items-end gap-1">
-                            <span>{formatScore(cell.score)}</span>
-                            <span className="flex gap-1">
-                              <GradeBadge grade={cell.grades.callCount} label="호출횟수" />
-                              <GradeBadge grade={cell.grades.setting} label="업무절감시간·업무기여도" />
-                            </span>
-                          </div>
-                        )}
+                      <td
+                        key={month.yearMonth}
+                        className="rounded-md px-2 py-2 text-center"
+                        style={{ backgroundColor: `rgba(99, 102, 241, ${alpha.toFixed(2)})` }}
+                      >
+                        <span className="block font-semibold">{formatScore(cell.score)}</span>
+                        <span className="mt-1 flex justify-center gap-1">
+                          <GradeDot grade={cell.grades.callCount} label="호출횟수" />
+                          <GradeDot grade={cell.grades.setting} label="업무절감시간·업무기여도" />
+                        </span>
                       </td>
                     );
                   })}
                 </tr>
               ))}
-              <tr className="bg-zinc-50 font-bold dark:bg-zinc-800">
-                <td className="sticky left-0 bg-zinc-50 py-2.5 pr-3 dark:bg-zinc-800">합계</td>
+              <tr>
+                <td className="px-2 py-2 font-bold">합계</td>
                 {activeMonths.map((month) => (
-                  <td key={month.yearMonth} className="px-2 py-2.5 text-right align-top">
+                  <td key={month.yearMonth} className="rounded-md border border-zinc-700 px-2 py-2 text-center font-bold">
                     {month.total === null ? (
-                      <span className="text-xs font-normal text-zinc-400">{NO_DATA}</span>
+                      <span className="text-[11px] font-normal text-zinc-500">{NO_DATA}</span>
                     ) : (
-                      <div className="flex flex-col items-end">
-                        <span>{formatScore(month.total)}</span>
+                      <>
+                        <span className="block">{formatScore(month.total)}</span>
                         {month.penaltyApplied && (
-                          <span className="text-[10px] font-normal text-red-600 dark:text-red-400">보안사고 -50%</span>
+                          <span className="mt-0.5 block text-[10px] font-normal text-red-400">보안사고 -50%</span>
                         )}
-                      </div>
+                      </>
                     )}
                   </td>
                 ))}
@@ -197,54 +214,87 @@ function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
       )}
       <p className="text-xs text-zinc-500">
         {emptyMonths.length > 0 && <>입력이 없는 달: {emptyMonths.map((month) => formatMonthLabel(month.yearMonth)).join(", ")}. </>}
-        근거 등급: <GradeBadge grade="실측" label="범례" /> 호출횟수 · <GradeBadge grade="설문 추정" label="범례" /> 업무절감시간·업무기여도.
         서비스 6개가 모두 계산된 달만 합계를 냅니다.
       </p>
     </section>
   );
 }
 
-function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; serviceNames: Record<number, string> }) {
-  const rows = [...settings].sort((a, b) => a.serviceId - b.serviceId || a.half.localeCompare(b.half));
+function Metric({ label, value, unit }: { label: string; value: number; unit: string }) {
+  return (
+    <div className="rounded-lg bg-zinc-800/60 px-3 py-2">
+      <p className="text-[11px] text-zinc-400">{label}</p>
+      <p className="text-lg font-bold tabular-nums">
+        {value.toLocaleString("ko-KR")}
+        <span className="ml-0.5 text-xs font-normal text-zinc-400">{unit}</span>
+      </p>
+    </div>
+  );
+}
+
+function SurveyHalf({ row }: { row: ScoreSetting }) {
+  const respondents = row.survey?.respondentCount ?? null;
+  const target = row.survey?.targetCount ?? null;
+  const rate = responseRate(respondents, target);
 
   return (
-    <section aria-label="설문 정보" className={`${cardClass} flex flex-col gap-3`}>
+    <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+      <div className="flex items-center justify-between">
+        <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-300">
+          {row.half === "H1" ? "상반기" : "하반기"}
+        </span>
+        <span className="text-xs text-zinc-400">
+          {row.survey?.aggregation ? aggregationLabel(row.survey.aggregation) : NOT_RECORDED}
+        </span>
+      </div>
+
+      <div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-2xl font-bold tabular-nums">{formatResponseRate(respondents, target)}</span>
+          <span className="text-xs text-zinc-400">{formatRespondents(respondents, target)}</span>
+        </div>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-800" aria-hidden>
+          <div className="h-full rounded-full bg-amber-400" style={{ width: `${Math.min(100, rate ?? 0)}%` }} />
+        </div>
+        <p className="mt-1 text-[11px] text-zinc-500">
+          응답률 · {formatSurveyPeriod(row.survey?.surveyStart ?? null, row.survey?.surveyEnd ?? null)}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Metric label="업무절감시간" value={row.savedMinutes} unit="분/건" />
+        <Metric label="업무기여도" value={row.contributionPct} unit="%" />
+      </div>
+    </div>
+  );
+}
+
+function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; serviceNames: Record<number, string> }) {
+  const sorted = [...settings].sort((a, b) => a.serviceId - b.serviceId || a.half.localeCompare(b.half));
+  const serviceIds = [...new Set(sorted.map((row) => row.serviceId))];
+
+  return (
+    <section aria-label="설문 정보" className={`${cardClass} flex flex-col gap-4`}>
       <div>
         <h2 className="text-lg font-bold">설문 정보</h2>
         <p className="text-xs text-zinc-500">업무절감시간·업무기여도가 어떤 조사에서 나왔는지 보여주는 근거입니다.</p>
       </div>
-      {rows.length === 0 ? (
+      {serviceIds.length === 0 ? (
         <p className="text-sm text-zinc-500">{NO_DATA} — 입력된 설문 설정값이 없습니다.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] border-collapse text-left text-sm tabular-nums">
-            <thead>
-              <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
-                <th className="py-2 pr-3 font-medium">서비스</th>
-                <th className="py-2 pr-3 font-medium">반기</th>
-                <th className="py-2 pr-3 font-medium">응답자 / 대상</th>
-                <th className="py-2 pr-3 text-right font-medium">응답률</th>
-                <th className="py-2 pr-3 font-medium">조사 기간</th>
-                <th className="py-2 pr-3 font-medium">집계 방식</th>
-                <th className="py-2 pr-3 text-right font-medium">절감시간(분)</th>
-                <th className="py-2 text-right font-medium">기여도(%)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={`${row.serviceId}-${row.half}`} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2.5 pr-3 font-medium">{serviceNames[row.serviceId] ?? row.serviceId}</td>
-                  <td className="py-2.5 pr-3">{row.half === "H1" ? "상반기" : "하반기"}</td>
-                  <td className="py-2.5 pr-3">{formatRespondents(row.survey?.respondentCount ?? null, row.survey?.targetCount ?? null)}</td>
-                  <td className="py-2.5 pr-3 text-right">{formatResponseRate(row.survey?.respondentCount ?? null, row.survey?.targetCount ?? null)}</td>
-                  <td className="py-2.5 pr-3">{formatSurveyPeriod(row.survey?.surveyStart ?? null, row.survey?.surveyEnd ?? null)}</td>
-                  <td className="py-2.5 pr-3">{row.survey?.aggregation ? aggregationLabel(row.survey.aggregation) : NOT_RECORDED}</td>
-                  <td className="py-2.5 pr-3 text-right">{row.savedMinutes}</td>
-                  <td className="py-2.5 text-right">{row.contributionPct}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {serviceIds.map((id) => (
+            <article key={id} className="flex flex-col gap-3 rounded-2xl border border-zinc-800 p-4">
+              <h3 className="font-bold">{serviceNames[id] ?? id}</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {sorted
+                  .filter((row) => row.serviceId === id)
+                  .map((row) => (
+                    <SurveyHalf key={row.half} row={row} />
+                  ))}
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </section>
