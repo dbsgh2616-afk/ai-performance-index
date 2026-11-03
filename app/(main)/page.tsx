@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 
 import { DashboardView } from "@/components/dashboard/DashboardView";
-import { ScoreChart, type ChartRow } from "@/components/dashboard/ScoreChart";
+import { ScoreChart, type GaugeMonth } from "@/components/dashboard/ScoreChart";
 import { requireUser } from "@/lib/auth/guard";
 import { currentYear, currentYearMonth } from "@/lib/date";
 import { getDb } from "@/lib/db";
@@ -34,11 +34,12 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
   const focusMonth = year === nowYear ? currentYearMonth() : `${year}-12`;
   const focusLabel = year === nowYear ? "이번 달" : formatMonthLabel(focusMonth);
 
-  const chartRows: ChartRow[] = yearScore.months.map((month) => {
-    const row: ChartRow = { month: formatMonthLabel(month.yearMonth) };
-    for (const service of month.services) row[service.serviceName] = service.score;
-    return row;
-  });
+  const gaugeMonths: GaugeMonth[] = yearScore.months.map((month) => ({
+    label: formatMonthLabel(month.yearMonth),
+    total: month.total,
+    penalty: month.penaltyApplied,
+    isFocus: month.yearMonth === focusMonth,
+  }));
 
   return (
     <div className="flex flex-col gap-8">
@@ -72,7 +73,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
         focusMonth={focusMonth}
         focusLabel={focusLabel}
         isAdmin={user.role === "admin"}
-        chart={<ScoreChart rows={chartRows} serviceNames={data.services.map((service) => service.name)} />}
+        chart={<ScoreChart months={gaugeMonths} />}
       />
     </div>
   );

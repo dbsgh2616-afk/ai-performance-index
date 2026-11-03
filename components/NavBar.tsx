@@ -24,7 +24,7 @@ export async function NavBar() {
           <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,#f5d0fe,#a855f7_60%,#2e1065)] shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
           <span className="absolute -inset-x-1 top-1/2 h-1.5 -translate-y-1/2 -rotate-12 rounded-full border border-cyan-300/70" />
         </span>
-        <span className="bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent">AI 성과지수 관리 서비스</span>
+        <span className="bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent">AI성과활용지수</span>
       </Link>
       <div className="flex flex-wrap items-center gap-3">
         <Link href="/" className="hover:text-fuchsia-400">대시보드</Link>

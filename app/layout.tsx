@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI 성과지수 관리 서비스",
+  title: "AI성과활용지수",
   description: "공사의 AI 서비스 성과를 지수로 산출·관리하고 증적자료를 출력하는 내부용 서비스",
 };
 
