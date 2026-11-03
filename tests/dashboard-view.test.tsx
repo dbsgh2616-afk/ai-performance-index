@@ -168,14 +168,23 @@ describe("대시보드 화면", () => {
       />,
     );
     expect(html).toContain("서비스 상태등");
-    expect(html).toContain("입력 대기");
+    expect(html).toContain("교신 대기");
     expect(html).toContain("근거 미확인");
     expect(html).toContain("호출횟수 미입력");
-    expect(html).toContain("/ 3 입력 완료");
+    expect(html).toContain("/ 3 교신 완료");
   });
 
   it("상태 정보가 없으면 상태등 카드를 그리지 않는다", () => {
     expect(render(["2026-10"])).not.toContain("서비스 상태등");
+  });
+
+  it("우주 이벤트 카드는 항상 보이고, 이벤트가 없으면 잔잔하다는 안내를 보여준다", () => {
+    expect(render(["2026-10"])).toContain("우주 이벤트");
+    expect(render([])).toContain("특별한 이벤트가 없습니다");
+  });
+
+  it("보안사고가 있는 달에는 이벤트 카드에 경보가 나온다", () => {
+    expect(render(["2026-10"], ["2026-10"])).toContain("보안사고 경보");
   });
 
   it("전월 입력이 없으면 증감률을 그리지 않는다", () => {

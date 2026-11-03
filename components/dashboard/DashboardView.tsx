@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { changeRate, formatMonthLabel, formatPercent, formatScore, NO_DATA } from "@/lib/format";
+import { spaceEvents, type SpaceEvent, type SpaceEventKind } from "@/lib/score/events";
 import type { ServiceStatus, ServiceStatusKind } from "@/lib/score/status";
 import { rankServices, type EvidenceGrade, type MonthScore, type ScoreSetting, type YearScore } from "@/lib/score";
 import {
@@ -65,42 +66,117 @@ function Delta({ current, previous }: { current: number | null; previous: number
 }
 
 const STATUS_STYLE: Record<ServiceStatusKind, { label: string; dot: string; text: string }> = {
-  done: { label: "입력 완료", dot: "bg-cyan-300 shadow-[0_0_10px_#67e8f9]", text: "text-cyan-300" },
-  pending: { label: "입력 대기", dot: "bg-amber-300 shadow-[0_0_10px_#fcd34d] animate-pulse", text: "text-amber-300" },
-  unverified: { label: "근거 미확인", dot: "bg-pink-400 shadow-[0_0_10px_#f472b6]", text: "text-pink-300" },
+  done: { label: "교신 완료", dot: "bg-cyan-300 shadow-[0_0_12px_#67e8f9]", text: "text-cyan-300" },
+  pending: { label: "교신 대기", dot: "bg-amber-300 shadow-[0_0_12px_#fcd34d] animate-pulse", text: "text-amber-300" },
+  unverified: { label: "신호 불명 (근거 미확인)", dot: "bg-pink-400 shadow-[0_0_12px_#f472b6]", text: "text-pink-300" },
 };
 
-// 서비스별 상태등: 이번 달 누가 자료를 줬고 누가 아직인지 한눈에 보여 준다.
+const SATELLITE_RADIUS = 88; // px
+
+// 서비스별 상태등: 행성 둘레를 도는 위성으로 그린다. 이번 달 누가 자료를 보냈는지(교신) 한눈에 보여 준다.
 function StatusStrip({ statuses, focusLabel }: { statuses: ServiceStatus[]; focusLabel: string }) {
   const doneCount = statuses.filter((status) => status.kind === "done").length;
 
   return (
-    <section aria-label="서비스 상태등" className={`${cardClass} flex flex-col gap-4`}>
+    <section aria-label="서비스 상태등" className={`${cardClass} flex h-full flex-col gap-5`}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <Eyebrow>Signal lights</Eyebrow>
+          <Eyebrow>Satellite link</Eyebrow>
           <h2 className="mt-1 text-lg font-bold">서비스 상태등</h2>
-          <p className="text-xs text-zinc-500">{focusLabel} 기준 입력 상황입니다.</p>
+          <p className="text-xs text-zinc-500">{focusLabel} 기준 교신 상황입니다. 위성 하나가 서비스 하나입니다.</p>
         </div>
         <p className="font-mono text-sm text-zinc-300">
-          <span className="text-2xl font-bold text-white">{doneCount}</span> / {statuses.length} 입력 완료
+          <span className="text-2xl font-bold text-white">{doneCount}</span> / {statuses.length} 교신 완료
         </p>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {statuses.map((status) => {
-          const style = STATUS_STYLE[status.kind];
-          return (
-            <li key={status.serviceId} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${style.dot}`} aria-hidden />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{status.serviceName}</p>
-                <p className={`text-xs font-medium ${style.text}`}>{style.label}</p>
-                {status.reasons.length > 0 && <p className="mt-0.5 text-[11px] text-zinc-500">{status.reasons.join(" · ")}</p>}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+
+      <div className="flex flex-col items-center gap-6 sm:flex-row">
+        {/* 궤도 그림: 가운데 행성, 둘레를 천천히 도는 위성 */}
+        <div className="relative h-56 w-56 shrink-0" aria-hidden>
+          <div className="absolute inset-[72px] rounded-full bg-[radial-gradient(circle_at_32%_30%,#f5d0fe,#a855f7_45%,#2e1065_82%)] shadow-[0_0_40px_rgba(168,85,247,0.55)]" />
+          <div className="absolute inset-3 rounded-full border border-white/15" />
+          <div className="absolute inset-0 rounded-full border border-dashed border-white/10" />
+          <div className="orbit-spin absolute inset-0 animate-[orbit-spin_60s_linear_infinite]">
+            {statuses.map((status, index) => (
+              <span
+                key={status.serviceId}
+                className="absolute left-1/2 top-1/2 -ml-2 -mt-2 h-4 w-4"
+                style={{ transform: `rotate(${(360 / statuses.length) * index}deg) translateY(-${SATELLITE_RADIUS}px)` }}
+              >
+                <span className={`block h-4 w-4 rounded-full ${STATUS_STYLE[status.kind].dot}`} />
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <ul className="grid w-full flex-1 gap-2">
+          {statuses.map((status) => {
+            const style = STATUS_STYLE[status.kind];
+            return (
+              <li key={status.serviceId} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${style.dot}`} aria-hidden />
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-baseline gap-x-2 text-sm font-medium">
+                    {status.serviceName}
+                    <span className={`text-xs ${style.text}`}>{style.label}</span>
+                  </p>
+                  {status.reasons.length > 0 && <p className="text-[11px] text-zinc-500">{status.reasons.join(" · ")}</p>}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+const EVENT_GLYPH: Record<SpaceEventKind, { glyph: string; color: string }> = {
+  record: { glyph: "★", color: "text-amber-300 bg-amber-300/15" },
+  "service-record": { glyph: "✦", color: "text-fuchsia-300 bg-fuchsia-400/15" },
+  surge: { glyph: "☄", color: "text-cyan-300 bg-cyan-300/15" },
+  milestone: { glyph: "◎", color: "text-violet-300 bg-violet-400/15" },
+  "rank-up": { glyph: "▲", color: "text-emerald-300 bg-emerald-300/15" },
+  incident: { glyph: "!", color: "text-rose-300 bg-rose-400/15" },
+};
+
+// 우주 이벤트: 이번 달에 생긴 눈에 띄는 일. 신기록이 있으면 유성이 지나간다.
+function EventsCard({ events, focusLabel }: { events: SpaceEvent[]; focusLabel: string }) {
+  const celebrate = events.some((event) => event.kind === "record" || event.kind === "service-record" || event.kind === "milestone");
+
+  return (
+    <section aria-label="우주 이벤트" className={`${cardClass} relative flex h-full flex-col gap-4 overflow-hidden`}>
+      {celebrate && (
+        <>
+          <span className="shooting-star pointer-events-none absolute left-1/2 top-4" aria-hidden />
+          <span className="shooting-star pointer-events-none absolute left-3/4 top-10 [animation-delay:2.2s]" aria-hidden />
+        </>
+      )}
+      <div>
+        <Eyebrow>Event log</Eyebrow>
+        <h2 className="mt-1 text-lg font-bold">우주 이벤트</h2>
+        <p className="text-xs text-zinc-500">{focusLabel}에 감지된 소식입니다.</p>
+      </div>
+      {events.length === 0 ? (
+        <p className="text-sm text-zinc-500">잔잔한 우주입니다. 이번 달은 특별한 이벤트가 없습니다.</p>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {events.map((event) => {
+            const glyph = EVENT_GLYPH[event.kind];
+            return (
+              <li key={`${event.kind}-${event.title}`} className="flex items-start gap-3">
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${glyph.color}`} aria-hidden>
+                  {glyph.glyph}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold">{event.title}</p>
+                  <p className="text-xs text-zinc-400">{event.detail}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }
@@ -394,12 +470,22 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
   const focus = yearScore.months[focusIndex];
   // 전월 대비 비교용. 1월은 작년 12월 데이터가 이 화면에 없어서 비교하지 않는다.
   const previous = yearScore.months[focusIndex - 1];
+  const events = spaceEvents(yearScore, focus.yearMonth);
 
   return (
     <div className="flex flex-col gap-6">
       <SummaryCards yearScore={yearScore} focus={focus} focusLabel={focusLabel} previous={previous} />
 
-      {statuses && <StatusStrip statuses={statuses} focusLabel={focusLabel} />}
+      <div className="grid gap-4 lg:grid-cols-5">
+        {statuses && (
+          <div className="lg:col-span-3">
+            <StatusStrip statuses={statuses} focusLabel={focusLabel} />
+          </div>
+        )}
+        <div className={statuses ? "lg:col-span-2" : "lg:col-span-5"}>
+          <EventsCard events={events} focusLabel={focusLabel} />
+        </div>
+      </div>
 
       {isAdmin && (
         <p className="text-sm">
