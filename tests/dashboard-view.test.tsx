@@ -102,11 +102,11 @@ describe("대시보드 화면", () => {
     expect(html).toContain("중앙값");
   });
 
-  it("입력이 있는 달만 칸으로 보여주고, 빈 달은 따로 알려준다", () => {
-    const html = render(["2026-10"]);
-    expect(html).toContain("10월");
-    expect(html).toContain("입력이 없는 달: 1월, 2월");
-    expect(html).not.toContain("<th class=\"px-2 py-1 text-center font-medium\">1월</th>");
+  it("서비스별 월 지수는 선택한 달(당월)만 보여준다", () => {
+    const html = render(["2026-09", "2026-10"]);
+    expect(html).toContain("이번 달 · 10월 기준");
+    expect(html).not.toContain("9월");
+    expect(html).not.toContain("입력이 없는 달");
   });
 
   it("입력이 하나도 없으면 '데이터 없음' 안내를 보여준다", () => {

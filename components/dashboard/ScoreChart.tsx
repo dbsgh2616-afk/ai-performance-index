@@ -38,8 +38,8 @@ export function ScoreChart({ rows, serviceNames }: { rows: ChartRow[]; serviceNa
         </ResponsiveContainer>
       </div>
       <p className="text-xs text-zinc-500">
-        서비스별 점수를 쌓은 막대입니다. 입력이 없는 서비스는 그리지 않으며, 표의 합계는 6개가 모두 계산된 달만 나옵니다.
-        보안사고 감점은 표의 합계에만 반영됩니다.
+        서비스별 점수를 쌓은 막대입니다. 입력이 없는 서비스는 그리지 않으며, 합계는 6개가 모두 계산된 달만 나옵니다.
+        보안사고 감점은 합계에만 반영됩니다.
       </p>
     </figure>
   );

@@ -143,21 +143,20 @@ function GradeDot({ grade, label }: { grade: EvidenceGrade | null; label: string
   return <span className={`h-1.5 w-1.5 rounded-full ${color}`} title={`${label}: ${grade}`} />;
 }
 
-function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
-  // 입력이 있는 달만 칸으로 보여준다. 빈 달이 표를 가득 채우지 않게 한다.
-  const activeMonths = yearScore.months.filter((month) => month.services.some((service) => service.callCount !== null));
-  const emptyMonths = yearScore.months.filter((month) => !activeMonths.includes(month));
-  const services = yearScore.months[0].services;
-  // 점수가 클수록 칸 배경이 진해지는 히트맵. 가장 큰 칸을 기준으로 한다.
-  const maxScore = Math.max(1, ...activeMonths.flatMap((month) => month.services.map((service) => service.score ?? 0)));
+function MonthlyTable({ focus, focusLabel }: { focus: MonthScore; focusLabel: string }) {
+  const hasData = focus.services.some((service) => service.callCount !== null);
+  // 막대 길이는 그 달에서 가장 높은 서비스를 100%로 본다.
+  const maxScore = Math.max(1, ...focus.services.map((service) => service.score ?? 0));
 
   return (
-    <section aria-label="서비스×월 표" className={`${cardClass} flex flex-col gap-4`}>
+    <section aria-label="서비스별 월 지수" className={`${cardClass} flex flex-col gap-5`}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <Eyebrow>03 / Monthly</Eyebrow>
           <h2 className="mt-1 text-lg font-bold">서비스별 월 지수</h2>
-          <p className="text-xs text-zinc-500">칸이 진할수록 점수가 높습니다.</p>
+          <p className="text-xs text-zinc-500">
+            {focusLabel === formatMonthLabel(focus.yearMonth) ? focusLabel : `${focusLabel} · ${formatMonthLabel(focus.yearMonth)}`} 기준
+          </p>
         </div>
         <p className="flex items-center gap-3 text-xs text-zinc-400">
           <span className="flex items-center gap-1.5">
@@ -170,76 +169,54 @@ function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
           </span>
         </p>
       </div>
-      {activeMonths.length === 0 ? (
-        <p className="text-sm text-zinc-500">{NO_DATA} — 아직 입력된 달이 없습니다.</p>
+
+      {!hasData ? (
+        <p className="text-sm text-zinc-500">{NO_DATA} — 이 달에 입력된 값이 없습니다.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-1 font-mono text-sm tabular-nums">
-            <thead>
-              <tr className="text-xs text-zinc-400">
-                <th className="px-2 py-1 text-left font-medium">서비스</th>
-                {activeMonths.map((month) => (
-                  <th key={month.yearMonth} className="px-2 py-1 text-center font-medium">
-                    {formatMonthLabel(month.yearMonth)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {services.map((service, index) => (
-                <tr key={service.serviceId}>
-                  <td className="whitespace-nowrap px-2 py-1 font-medium">{service.serviceName}</td>
-                  {activeMonths.map((month) => {
-                    const cell = month.services[index];
-                    if (cell.score === null) {
-                      return (
-                        <td key={month.yearMonth} className="rounded-md bg-zinc-800/40 px-2 py-2 text-center text-[11px] text-zinc-500">
-                          {NO_DATA}
-                        </td>
-                      );
-                    }
-                    const alpha = 0.12 + 0.55 * (cell.score / maxScore);
-                    return (
-                      <td
-                        key={month.yearMonth}
-                        className="rounded-md px-2 py-2 text-center"
-                        style={{ backgroundColor: `rgba(168, 85, 247, ${alpha.toFixed(2)})` }}
-                      >
-                        <span className="block font-semibold">{formatScore(cell.score)}</span>
-                        <span className="mt-1 flex justify-center gap-1">
-                          <GradeDot grade={cell.grades.callCount} label="호출횟수" />
-                          <GradeDot grade={cell.grades.setting} label="업무절감시간·업무기여도" />
-                        </span>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-              <tr>
-                <td className="px-2 py-2 font-bold">합계</td>
-                {activeMonths.map((month) => (
-                  <td key={month.yearMonth} className="rounded-md border border-zinc-700 px-2 py-2 text-center font-bold">
-                    {month.total === null ? (
-                      <span className="text-[11px] font-normal text-zinc-500">{NO_DATA}</span>
-                    ) : (
-                      <>
-                        <span className="block">{formatScore(month.total)}</span>
-                        {month.penaltyApplied && (
-                          <span className="mt-0.5 block text-[10px] font-normal text-red-400">보안사고 -50%</span>
-                        )}
-                      </>
-                    )}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <>
+          <ul className="flex flex-col gap-4">
+            {focus.services.map((service) => (
+              <li key={service.serviceId} className="grid grid-cols-[8rem_1fr_auto] items-center gap-4">
+                <span className="flex items-center gap-2 truncate text-sm font-medium text-zinc-200">
+                  {service.serviceName}
+                </span>
+                <div className="h-2 overflow-hidden rounded-full bg-white/10" aria-hidden>
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500"
+                    style={{ width: `${service.score === null ? 0 : (service.score / maxScore) * 100}%` }}
+                  />
+                </div>
+                <span className="flex min-w-[8rem] items-center justify-end gap-2 font-mono text-sm tabular-nums">
+                  {service.score === null ? (
+                    <span className="text-xs text-zinc-500">{NO_DATA}</span>
+                  ) : (
+                    <>
+                      <GradeDot grade={service.grades.callCount} label="호출횟수" />
+                      <GradeDot grade={service.grades.setting} label="업무절감시간·업무기여도" />
+                      <span className="font-semibold text-white">{formatScore(service.score)}</span>
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center justify-between border-t border-white/10 pt-4">
+            <span className="font-bold">합계</span>
+            {focus.total === null ? (
+              <span className="text-sm text-zinc-500">{NO_DATA}</span>
+            ) : (
+              <span className="flex items-center gap-3">
+                {focus.penaltyApplied && (
+                  <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-[11px] font-medium text-red-300">보안사고 -50%</span>
+                )}
+                <span className="neon-text font-mono text-2xl font-bold tabular-nums">{formatScore(focus.total)}</span>
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-zinc-500">서비스 6개가 모두 계산된 달만 합계를 냅니다.</p>
+        </>
       )}
-      <p className="text-xs text-zinc-500">
-        {emptyMonths.length > 0 && <>입력이 없는 달: {emptyMonths.map((month) => formatMonthLabel(month.yearMonth)).join(", ")}. </>}
-        서비스 6개가 모두 계산된 달만 합계를 냅니다.
-      </p>
     </section>
   );
 }
@@ -350,7 +327,7 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
         </div>
       </div>
 
-      <MonthlyTable yearScore={yearScore} />
+      <MonthlyTable focus={focus} focusLabel={focusLabel} />
       <SurveyTable settings={settings} serviceNames={serviceNames} />
     </div>
   );
