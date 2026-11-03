@@ -41,7 +41,9 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     });
   } catch (error) {
     // 접속 주소나 비밀 값은 기록하지 않고 오류 메시지만 남긴다.
-    console.error("로그인 처리 오류:", error instanceof Error ? error.message : "알 수 없는 오류");
+    // drizzle은 DB의 진짜 오류를 cause에 담아 두므로 함께 남긴다. (원인을 찾을 수 있게)
+    const cause = error instanceof Error && error.cause instanceof Error ? error.cause.message : "";
+    console.error("로그인 처리 오류:", error instanceof Error ? error.message.split("\n")[0] : "알 수 없는 오류", cause);
     return { error: SYSTEM_ERROR_MESSAGE };
   }
 
