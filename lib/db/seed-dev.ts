@@ -3,7 +3,7 @@
 // 서비스별 규모를 다르게 잡아, 연간 누적 점수 순위가 KOBI+ > KOBI > 국유변화탐지 > 온비드 AI요약 > 성과나침반 > 슈퍼로이어가 되게 했다.
 import { asc, eq } from "drizzle-orm";
 
-import { accounts, monthlyInputs, services, surveySettings } from "./schema";
+import { accounts, infraMetrics, monthlyInputs, services, surveySettings } from "./schema";
 import type { AppDb } from "./types";
 
 export const DEV_YEAR = 2026;
@@ -41,9 +41,13 @@ export function devCallCount(profile: DevProfile, month: number): number {
 const QUESTION =
   "AI 서비스를 사용한 뒤 업무 1건당 절감된 시간(분)과, 업무 결과에 대한 AI의 기여도(%)를 응답해 주세요.";
 
+const DEV_UPTIME = [99.92, 99.88, 99.95, 99.81, 99.9, 99.7, 99.93, 99.85, 99.91, 99.78, 99.62];
+const round1 = (value: number) => Math.round(value * 10) / 10;
+
 export type DevSeedResult = {
   monthlyInputCount: number;
   settingCount: number;
+  infraCount: number;
 };
 
 // 첫 관리자와 서비스 6개가 먼저 있어야 한다. (seedBase를 먼저 실행)
@@ -100,5 +104,21 @@ export async function seedDev(db: AppDb): Promise<DevSeedResult> {
   });
   await db.insert(surveySettings).values(settingRows).onConflictDoNothing();
 
-  return { monthlyInputCount: inputRows.length, settingCount: settingRows.length };
+  // AI 인프라 지표(계기판 시연용): GPU와 스토리지는 조금씩 차올라 마지막 달에 "주의" 구간으로 들어간다.
+  const infraRows = Array.from({ length: DEV_LAST_MONTH }, (_, offset) => {
+    const month = offset + 1;
+    return {
+      yearMonth: `${DEV_YEAR}-${String(month).padStart(2, "0")}`,
+      gpuUsagePct: round1(42 + 3.2 * offset),
+      memoryUsagePct: round1(56 + 1.2 * offset),
+      storageUsagePct: round1(34 + 4.4 * offset),
+      uptimePct: DEV_UPTIME[offset],
+      source: DEV_SOURCE,
+      enteredById: admin.id,
+      enteredByName: admin.name,
+    };
+  });
+  await db.insert(infraMetrics).values(infraRows).onConflictDoNothing();
+
+  return { monthlyInputCount: inputRows.length, settingCount: settingRows.length, infraCount: infraRows.length };
 }

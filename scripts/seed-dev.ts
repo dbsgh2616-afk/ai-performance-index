@@ -9,7 +9,7 @@ async function main() {
   }
 
   const result = await seedDev(getDb());
-  console.log(`시험용 월 입력 ${result.monthlyInputCount}건, 설문 설정값 ${result.settingCount}건을 확인했습니다.`);
+  console.log(`시험용 월 입력 ${result.monthlyInputCount}건, 설문 설정값 ${result.settingCount}건, 인프라 지표 ${result.infraCount}건을 확인했습니다.`);
 }
 
 main()

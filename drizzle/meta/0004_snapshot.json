@@ -1,0 +1,705 @@
+{
+  "id": "70dd8c44-afd1-4cb8-8125-ca3c45f7f719",
+  "prevId": "0473bfd0-8252-453c-864b-f9f6115f89e7",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.accounts": {
+      "name": "accounts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "login_id": {
+          "name": "login_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "failed_count": {
+          "name": "failed_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_version": {
+          "name": "session_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "accounts_login_id_unique": {
+          "name": "accounts_login_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "login_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "accounts_failed_count_ck": {
+          "name": "accounts_failed_count_ck",
+          "value": "\"accounts\".\"failed_count\" >= 0"
+        },
+        "accounts_session_version_ck": {
+          "name": "accounts_session_version_ck",
+          "value": "\"accounts\".\"session_version\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.change_logs": {
+      "name": "change_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "changed_at": {
+          "name": "changed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "target_type": {
+          "name": "target_type",
+          "type": "change_target",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "field_name": {
+          "name": "field_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "old_value": {
+          "name": "old_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "new_value": {
+          "name": "new_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "changed_by_name": {
+          "name": "changed_by_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.infra_metrics": {
+      "name": "infra_metrics",
+      "schema": "",
+      "columns": {
+        "year_month": {
+          "name": "year_month",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "gpu_usage_pct": {
+          "name": "gpu_usage_pct",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "memory_usage_pct": {
+          "name": "memory_usage_pct",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_usage_pct": {
+          "name": "storage_usage_pct",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uptime_pct": {
+          "name": "uptime_pct",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entered_by_id": {
+          "name": "entered_by_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entered_by_name": {
+          "name": "entered_by_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entered_at": {
+          "name": "entered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "infra_metrics_year_month_ck": {
+          "name": "infra_metrics_year_month_ck",
+          "value": "\"infra_metrics\".\"year_month\" ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$'"
+        },
+        "infra_metrics_gpu_ck": {
+          "name": "infra_metrics_gpu_ck",
+          "value": "\"infra_metrics\".\"gpu_usage_pct\" between 0 and 100"
+        },
+        "infra_metrics_memory_ck": {
+          "name": "infra_metrics_memory_ck",
+          "value": "\"infra_metrics\".\"memory_usage_pct\" between 0 and 100"
+        },
+        "infra_metrics_storage_ck": {
+          "name": "infra_metrics_storage_ck",
+          "value": "\"infra_metrics\".\"storage_usage_pct\" between 0 and 100"
+        },
+        "infra_metrics_uptime_ck": {
+          "name": "infra_metrics_uptime_ck",
+          "value": "\"infra_metrics\".\"uptime_pct\" between 0 and 100"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.monthly_inputs": {
+      "name": "monthly_inputs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "service_id": {
+          "name": "service_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "year_month": {
+          "name": "year_month",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "call_count": {
+          "name": "call_count",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evidence_grade": {
+          "name": "evidence_grade",
+          "type": "evidence_grade",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'실측'"
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entered_by_id": {
+          "name": "entered_by_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entered_by_name": {
+          "name": "entered_by_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entered_at": {
+          "name": "entered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "monthly_inputs_service_id_services_id_fk": {
+          "name": "monthly_inputs_service_id_services_id_fk",
+          "tableFrom": "monthly_inputs",
+          "tableTo": "services",
+          "columnsFrom": [
+            "service_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "monthly_inputs_service_month_uq": {
+          "name": "monthly_inputs_service_month_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "service_id",
+            "year_month"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "monthly_inputs_year_month_ck": {
+          "name": "monthly_inputs_year_month_ck",
+          "value": "\"monthly_inputs\".\"year_month\" ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$'"
+        },
+        "monthly_inputs_call_count_ck": {
+          "name": "monthly_inputs_call_count_ck",
+          "value": "\"monthly_inputs\".\"call_count\" >= 0"
+        },
+        "monthly_inputs_grade_ck": {
+          "name": "monthly_inputs_grade_ck",
+          "value": "\"monthly_inputs\".\"evidence_grade\" = '실측'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.monthly_security": {
+      "name": "monthly_security",
+      "schema": "",
+      "columns": {
+        "year_month": {
+          "name": "year_month",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "incident": {
+          "name": "incident",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entered_by_id": {
+          "name": "entered_by_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entered_by_name": {
+          "name": "entered_by_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entered_at": {
+          "name": "entered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "monthly_security_year_month_ck": {
+          "name": "monthly_security_year_month_ck",
+          "value": "\"monthly_security\".\"year_month\" ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.services": {
+      "name": "services",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "services_name_unique": {
+          "name": "services_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        },
+        "services_sort_order_uq": {
+          "name": "services_sort_order_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "sort_order"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "services_sort_order_ck": {
+          "name": "services_sort_order_ck",
+          "value": "\"services\".\"sort_order\" BETWEEN 1 AND 6"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.survey_settings": {
+      "name": "survey_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "service_id": {
+          "name": "service_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "half": {
+          "name": "half",
+          "type": "half",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "saved_minutes": {
+          "name": "saved_minutes",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contribution_pct": {
+          "name": "contribution_pct",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "correction_factor": {
+          "name": "correction_factor",
+          "type": "numeric(8, 4)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "evidence_grade": {
+          "name": "evidence_grade",
+          "type": "evidence_grade",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'설문 추정'"
+        },
+        "respondent_count": {
+          "name": "respondent_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_count": {
+          "name": "target_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "survey_start": {
+          "name": "survey_start",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "survey_end": {
+          "name": "survey_end",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aggregation": {
+          "name": "aggregation",
+          "type": "aggregation_method",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "question_text": {
+          "name": "question_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entered_by_id": {
+          "name": "entered_by_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entered_by_name": {
+          "name": "entered_by_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entered_at": {
+          "name": "entered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "survey_settings_service_id_services_id_fk": {
+          "name": "survey_settings_service_id_services_id_fk",
+          "tableFrom": "survey_settings",
+          "tableTo": "services",
+          "columnsFrom": [
+            "service_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "survey_settings_service_period_uq": {
+          "name": "survey_settings_service_period_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "service_id",
+            "year",
+            "half"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "survey_settings_year_ck": {
+          "name": "survey_settings_year_ck",
+          "value": "\"survey_settings\".\"year\" BETWEEN 2000 AND 2099"
+        },
+        "survey_settings_grade_ck": {
+          "name": "survey_settings_grade_ck",
+          "value": "\"survey_settings\".\"evidence_grade\" = '설문 추정'"
+        },
+        "survey_settings_saved_minutes_ck": {
+          "name": "survey_settings_saved_minutes_ck",
+          "value": "\"survey_settings\".\"saved_minutes\" >= 0"
+        },
+        "survey_settings_contribution_ck": {
+          "name": "survey_settings_contribution_ck",
+          "value": "\"survey_settings\".\"contribution_pct\" BETWEEN 0 AND 100"
+        },
+        "survey_settings_correction_ck": {
+          "name": "survey_settings_correction_ck",
+          "value": "\"survey_settings\".\"correction_factor\" > 0"
+        },
+        "survey_settings_respondent_ck": {
+          "name": "survey_settings_respondent_ck",
+          "value": "\"survey_settings\".\"respondent_count\" IS NULL OR \"survey_settings\".\"respondent_count\" >= 0"
+        },
+        "survey_settings_target_ck": {
+          "name": "survey_settings_target_ck",
+          "value": "\"survey_settings\".\"target_count\" IS NULL OR \"survey_settings\".\"target_count\" > 0"
+        },
+        "survey_settings_response_ck": {
+          "name": "survey_settings_response_ck",
+          "value": "\"survey_settings\".\"respondent_count\" IS NULL OR \"survey_settings\".\"target_count\" IS NULL OR \"survey_settings\".\"respondent_count\" <= \"survey_settings\".\"target_count\""
+        },
+        "survey_settings_period_ck": {
+          "name": "survey_settings_period_ck",
+          "value": "\"survey_settings\".\"survey_start\" IS NULL OR \"survey_settings\".\"survey_end\" IS NULL OR \"survey_settings\".\"survey_end\" >= \"survey_settings\".\"survey_start\""
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.aggregation_method": {
+      "name": "aggregation_method",
+      "schema": "public",
+      "values": [
+        "mean",
+        "median",
+        "trimmed_mean"
+      ]
+    },
+    "public.change_target": {
+      "name": "change_target",
+      "schema": "public",
+      "values": [
+        "monthly_input",
+        "monthly_security",
+        "survey_setting",
+        "account",
+        "infra_metric"
+      ]
+    },
+    "public.evidence_grade": {
+      "name": "evidence_grade",
+      "schema": "public",
+      "values": [
+        "실측",
+        "설문 추정"
+      ]
+    },
+    "public.half": {
+      "name": "half",
+      "schema": "public",
+      "values": [
+        "H1",
+        "H2"
+      ]
+    },
+    "public.role": {
+      "name": "role",
+      "schema": "public",
+      "values": [
+        "admin",
+        "viewer"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

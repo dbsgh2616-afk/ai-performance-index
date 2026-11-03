@@ -3,7 +3,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { InfraCockpit } from "./InfraCockpit";
+
 import { changeRate, formatMonthLabel, formatPercent, formatScore, NO_DATA } from "@/lib/format";
+import type { InfraSnapshot } from "@/lib/infra";
 import { spaceEvents, type SpaceEvent, type SpaceEventKind } from "@/lib/score/events";
 import type { ServiceStatus, ServiceStatusKind } from "@/lib/score/status";
 import { rankServices, type EvidenceGrade, type MonthScore, type ScoreSetting, type YearScore } from "@/lib/score";
@@ -25,6 +28,7 @@ type Props = {
   isAdmin: boolean;
   chart?: ReactNode;
   statuses?: ServiceStatus[]; // 서비스 상태등. 없으면 카드를 그리지 않는다.
+  infra?: InfraSnapshot | null; // AI 인프라 계기판. undefined면 카드를 그리지 않고, null이면 "데이터 없음"으로 그린다.
 };
 
 // 유리 질감 카드. 색은 포인트에만 쓴다. (app/globals.css의 glass 유틸리티)
@@ -464,7 +468,7 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
   );
 }
 
-export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart, statuses }: Props) {
+export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart, statuses, infra }: Props) {
   const found = yearScore.months.findIndex((month) => month.yearMonth === focusMonth);
   const focusIndex = found === -1 ? 11 : found;
   const focus = yearScore.months[focusIndex];
@@ -478,6 +482,8 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
       <div className="gradient-border rounded-3xl p-6 sm:p-8">{chart}</div>
 
       <SummaryCards yearScore={yearScore} focus={focus} focusLabel={focusLabel} previous={previous} />
+
+      {infra !== undefined && <InfraCockpit snapshot={infra} yearMonth={focus.yearMonth} isAdmin={isAdmin} />}
 
       <div className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-2">

@@ -17,6 +17,10 @@ export const FIELD_LABELS: Record<string, string> = {
   name: "이름",
   role: "권한",
   password: "비밀번호",
+  gpu_usage_pct: "GPU 사용률(%)",
+  memory_usage_pct: "메모리 사용률(%)",
+  storage_usage_pct: "스토리지 사용률(%)",
+  uptime_pct: "서비스 가동률(%)",
 };
 
 export const TARGET_LABELS: Record<string, string> = {
@@ -24,6 +28,7 @@ export const TARGET_LABELS: Record<string, string> = {
   monthly_security: "보안사고",
   survey_setting: "설문 설정값",
   account: "계정",
+  infra_metric: "AI 인프라 지표",
 };
 
 export const UNVERIFIED = "근거 미확인";

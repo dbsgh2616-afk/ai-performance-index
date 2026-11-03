@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth/guard";
 const ADMIN_LINKS = [
   { href: "/input", label: "입력" },
   { href: "/settings", label: "설정" },
+  { href: "/infra", label: "인프라" },
   { href: "/history", label: "이력" },
   { href: "/evidence", label: "증적" },
   { href: "/admin/accounts", label: "계정" },

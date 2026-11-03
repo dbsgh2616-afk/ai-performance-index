@@ -34,6 +34,7 @@ export const changeTargetEnum = pgEnum("change_target", [
   "monthly_security", // 월별 보안사고
   "survey_setting", // 반기별 설문 설정값
   "account", // 계정
+  "infra_metric", // 월별 AI 인프라 지표 (GPU·메모리·스토리지·가동률)
 ]);
 
 // AI 서비스 6개. 추가·삭제 기능은 만들지 않는다. (PRD 6번)
@@ -100,6 +101,33 @@ export const monthlyInputs = pgTable(
     check("monthly_inputs_call_count_ck", sql`${t.callCount} >= 0`),
     // 호출횟수는 실측만 입력한다. (DESIGN 6.2)
     check("monthly_inputs_grade_ck", sql`${t.evidenceGrade} = '실측'`),
+  ],
+);
+
+// 월마다 1줄. 기관 AI 인프라(GPU·메모리·스토리지·가동률)의 월 대표값(%). 지수 계산에는 쓰지 않고 대시보드 계기판에만 쓴다.
+// 서버에서 자동으로 읽지 않고 관리자가 월 1회 직접 입력한다.
+export const infraMetrics = pgTable(
+  "infra_metrics",
+  {
+    yearMonth: text("year_month").primaryKey(),
+    gpuUsagePct: numeric("gpu_usage_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
+    memoryUsagePct: numeric("memory_usage_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
+    storageUsagePct: numeric("storage_usage_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
+    uptimePct: numeric("uptime_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
+    source: text("source"),
+    enteredById: integer("entered_by_id").notNull(),
+    enteredByName: text("entered_by_name").notNull(),
+    enteredAt: timestamp("entered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    check("infra_metrics_year_month_ck", sql`${t.yearMonth} ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$'`),
+    check("infra_metrics_gpu_ck", sql`${t.gpuUsagePct} between 0 and 100`),
+    check("infra_metrics_memory_ck", sql`${t.memoryUsagePct} between 0 and 100`),
+    check("infra_metrics_storage_ck", sql`${t.storageUsagePct} between 0 and 100`),
+    check("infra_metrics_uptime_ck", sql`${t.uptimePct} between 0 and 100`),
   ],
 );
 
@@ -198,5 +226,6 @@ export type Service = typeof services.$inferSelect;
 export type Account = typeof accounts.$inferSelect;
 export type MonthlyInput = typeof monthlyInputs.$inferSelect;
 export type MonthlySecurity = typeof monthlySecurity.$inferSelect;
+export type InfraMetric = typeof infraMetrics.$inferSelect;
 export type SurveySetting = typeof surveySettings.$inferSelect;
 export type ChangeLog = typeof changeLogs.$inferSelect;

@@ -7,7 +7,7 @@ import { formatDateTime } from "./format";
 import { fieldLabel, targetLabel } from "./evidence/labels";
 
 export type HistoryTarget = (typeof changeLogs.$inferSelect)["targetType"];
-export const HISTORY_TARGETS: HistoryTarget[] = ["monthly_input", "monthly_security", "survey_setting", "account"];
+export const HISTORY_TARGETS: HistoryTarget[] = ["monthly_input", "monthly_security", "survey_setting", "account", "infra_metric"];
 
 export type HistoryFilter = {
   from?: string; // YYYY-MM-DD (한국 시간)

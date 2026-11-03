@@ -8,6 +8,7 @@ import { requireUser } from "@/lib/auth/guard";
 import { currentYear, currentYearMonth } from "@/lib/date";
 import { getDb } from "@/lib/db";
 import { formatMonthLabel } from "@/lib/format";
+import { loadInfra } from "@/lib/infra";
 import { calculateYear } from "@/lib/score";
 import { loadScoreData } from "@/lib/score/load";
 import { serviceStatuses } from "@/lib/score/status";
@@ -37,6 +38,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
 
   const focusScore = yearScore.months.find((month) => month.yearMonth === focusMonth) ?? yearScore.months[11];
   const statuses = serviceStatuses(data, focusScore);
+  const infra = await loadInfra(getDb(), focusScore.yearMonth);
 
   const gaugeMonths: GaugeMonth[] = yearScore.months.map((month) => ({
     label: formatMonthLabel(month.yearMonth),
@@ -79,6 +81,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
         isAdmin={user.role === "admin"}
         chart={<ScoreChart months={gaugeMonths} />}
         statuses={statuses}
+        infra={infra}
       />
     </div>
   );
