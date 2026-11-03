@@ -1,0 +1,8 @@
+# Vercel CLI로 올릴 때 제외할 것 (용량이 크거나 올리면 안 되는 것)
+node_modules
+.next
+trash-can
+.bkit
+.env*
+.vercel
+coverage

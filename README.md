@@ -5,6 +5,12 @@
 
 > 이 저장소의 화면에 나오는 숫자는 파일럿 단계의 **시연용 임의 값**입니다. 실제 성과 수치가 아닙니다.
 
+## 배포
+
+- 서비스 주소: <https://ai-performance-index.vercel.app> (Vercel, 로그인 후 사용)
+- 저장소: <https://github.com/dbsgh2616-afk/ai-performance-index>
+- 운영 DB: Supabase(PostgreSQL), 모든 표에 행 수준 보안(RLS) 적용
+
 ## 무엇을 하나요
 
 - **성과지수 산출**: `호출횟수(실측) × 건당 업무절감시간 × 업무기여도(설문) × 보정계수`. 월별 지수는 서비스 6개를 합산하고, 연간 지수는 월별 지수를 누적합니다.
