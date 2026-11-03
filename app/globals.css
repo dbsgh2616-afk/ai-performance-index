@@ -95,15 +95,15 @@ body {
 /* 조종석 계기판 — 위가 불룩한 곡선(대시보드 윗면) + 그라데이션 테두리 */
 .cockpit-dash {
   border: 1px solid transparent;
-  border-radius: 50% 50% 0 0 / 64px 64px 0 0;
+  border-radius: 50% 50% 0 0 / 120px 120px 0 0;
   background:
     linear-gradient(180deg, #0d1230, #05060f) padding-box,
     linear-gradient(90deg, #8b5cf6, #67e8f9 50%, #d946ef) border-box;
 }
 /* 앞유리 양옆 기둥 */
-/* 3D: 계기판 윗면이 앞으로 눕는다. 자식(다이얼·ROI 패널)은 판 위로 떠 있게 3D 공간을 유지한다. */
+/* 3D — 계기판 윗면이 앞으로 눕는다. 자식(다이얼·ROI 패널)은 판 위로 떠 있게 3D 공간을 유지한다. */
 .cockpit-3d {
-  transform: rotateX(16deg);
+  transform: rotateX(20deg);
   transform-origin: 50% 100%;
   transform-style: preserve-3d;
 }

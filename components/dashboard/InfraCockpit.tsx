@@ -28,12 +28,12 @@ function overallLevel(snapshot: InfraSnapshot): DialLevel {
   return levels.includes("danger") ? "danger" : levels.includes("warn") ? "warn" : "ok";
 }
 
-// 계기는 판 위로 살짝 떠 있고(translateZ), 바깥쪽일수록 가운데를 향해 더 꺾인다. 곡선 계기판을 따라 바깥은 조금 아래에 놓인다.
+// 조종석에 앉은 사람을 감싸도록 계기들이 부채꼴로 놓인다: 바깥쪽일수록 가운데(앉은 사람)를 향해 더 꺾이고(rotateY), 더 앞으로 나와 있으며(translateZ), 곡선을 따라 조금 아래에 놓인다.
 const TILT_CLASS = {
-  "outer-left": "lg:translate-y-2 lg:[transform:perspective(600px)_translateZ(14px)_rotateY(20deg)]",
-  "inner-left": "lg:[transform:perspective(600px)_translateZ(18px)_rotateY(9deg)]",
-  "inner-right": "lg:[transform:perspective(600px)_translateZ(18px)_rotateY(-9deg)]",
-  "outer-right": "lg:translate-y-2 lg:[transform:perspective(600px)_translateZ(14px)_rotateY(-20deg)]",
+  "outer-left": "lg:translate-y-3 lg:[transform:perspective(520px)_translateZ(34px)_rotateY(38deg)]",
+  "inner-left": "lg:translate-y-0.5 lg:[transform:perspective(520px)_translateZ(26px)_rotateY(18deg)]",
+  "inner-right": "lg:translate-y-0.5 lg:[transform:perspective(520px)_translateZ(26px)_rotateY(-18deg)]",
+  "outer-right": "lg:translate-y-3 lg:[transform:perspective(520px)_translateZ(34px)_rotateY(-38deg)]",
 } as const;
 
 type Tilt = keyof typeof TILT_CLASS;
@@ -64,7 +64,7 @@ function RoiPanel({ roi }: { roi: RoiResult | null }) {
 
   return (
     <li
-      className="order-first col-span-2 flex min-w-0 flex-col items-center justify-center rounded-2xl border px-4 py-2 lg:order-none lg:col-span-1 lg:[transform:perspective(600px)_translateZ(30px)]"
+      className="order-first col-span-2 flex min-w-0 flex-col items-center justify-center rounded-2xl border px-4 py-2 lg:order-none lg:col-span-1 lg:[transform:perspective(600px)_translateZ(18px)]"
       style={{
         borderColor: `${color}99`,
         background: `radial-gradient(120% 140% at 50% 0%, ${color}33, #070914 70%)`,
@@ -152,7 +152,10 @@ export function InfraCockpit({
               <span className="cockpit-scan pointer-events-none absolute inset-0 opacity-30" aria-hidden />
               <span className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.06] to-transparent" aria-hidden />
 
-              <div className="relative px-3 pb-4 pt-0.5 sm:px-6 lg:px-[3vw]">
+              <div className="relative px-3 pb-4 pt-0.5 sm:px-6 lg:px-[5vw]">
+                {/* 계기들 뒤로 지나가는 둥근 레일: 판이 사람을 감싸는 곡면처럼 보이게 한다 */}
+                <span className="pointer-events-none absolute inset-x-[2%] -top-10 hidden h-32 rounded-[50%] border border-cyan-300/25 lg:block" aria-hidden />
+                <span className="pointer-events-none absolute inset-x-[8%] -top-6 hidden h-28 rounded-[50%] border border-fuchsia-300/15 lg:block" aria-hidden />
                 <ul className="cockpit-3d-row grid grid-cols-2 items-stretch gap-2 lg:grid-cols-[1fr_1fr_minmax(250px,1.5fr)_1fr_1fr] lg:gap-3">
                   {/* 1. GPU 도입비용: 도입비 합계에서 차지하는 비중을 막대로 */}
                   <Gauge
