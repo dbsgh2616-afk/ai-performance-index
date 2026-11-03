@@ -43,6 +43,13 @@
       "when": 1793683053250,
       "tag": "0005_roi_inputs",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793683529994,
+      "tag": "0006_enable_rls",
+      "breakpoints": true
     }
   ]
 }
