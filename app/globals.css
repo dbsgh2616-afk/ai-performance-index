@@ -149,3 +149,41 @@ body::after {
   transform: translateX(-25vw);
   will-change: transform;
 }
+/* 인프라 계기판 (components/dashboard/InfraCockpit.tsx) */
+.cockpit-body {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(180deg, #0d1230, #05060f) padding-box,
+    linear-gradient(90deg, #8b5cf6, #67e8f9 50%, #d946ef) border-box;
+}
+.cockpit-shape {
+  /* 위가 좁고 아래가 넓은 조종석 모양 */
+  clip-path: polygon(3.5% 0, 96.5% 0, 100% 100%, 0 100%);
+}
+@keyframes needle-in {
+  from { transform: rotate(-90deg); }
+  to { transform: rotate(var(--needle)); }
+}
+.infra-needle {
+  transform: rotate(var(--needle));
+  animation: needle-in 1.4s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+@keyframes cockpit-sweep {
+  0% { background-position: -40% 0; }
+  100% { background-position: 140% 0; }
+}
+.cockpit-sweep {
+  background: linear-gradient(90deg, transparent 0, rgba(255, 255, 255, 0.95) 50%, transparent 100%) no-repeat;
+  background-size: 30% 100%;
+  animation: cockpit-sweep 4s linear infinite;
+}
+@keyframes cockpit-scan {
+  to { background-position: 0 6px; }
+}
+.cockpit-scan {
+  background-image: repeating-linear-gradient(0deg, rgba(103, 232, 249, 0.06) 0 1px, transparent 1px 3px);
+  animation: cockpit-scan 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .infra-needle, .cockpit-sweep, .cockpit-scan { animation: none; }
+}

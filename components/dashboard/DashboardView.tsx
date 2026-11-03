@@ -477,13 +477,12 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
   const events = spaceEvents(yearScore, focus.yearMonth);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* 메인: 월별 AI 지수 선그래프. 맨 위에 가장 크게 둔다. */}
-      <div className="gradient-border rounded-3xl p-6 sm:p-8">{chart}</div>
-
+    // 계기판이 화면 아래에 붙어 있으므로, 그 높이만큼 아래를 비워 내용이 가려지지 않게 한다.
+    <div className={`flex flex-col gap-6 ${infra !== undefined ? "pb-72 sm:pb-64" : ""}`}>
       <SummaryCards yearScore={yearScore} focus={focus} focusLabel={focusLabel} previous={previous} />
 
-      {infra !== undefined && <InfraCockpit snapshot={infra} yearMonth={focus.yearMonth} isAdmin={isAdmin} />}
+      {/* 메인: 월별 AI 지수 선그래프. 연간 누적 지수 바로 아래에 둔다. */}
+      <div className="gradient-border rounded-3xl p-5 sm:p-6">{chart}</div>
 
       <div className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-2">
@@ -514,6 +513,9 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
       )}
 
       <SurveyTable settings={settings} serviceNames={serviceNames} />
+
+      {/* 화면 하단에 고정되는 AI 인프라 계기판 */}
+      {infra !== undefined && <InfraCockpit snapshot={infra} yearMonth={focus.yearMonth} isAdmin={isAdmin} />}
     </div>
   );
 }
