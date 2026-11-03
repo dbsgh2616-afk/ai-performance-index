@@ -68,7 +68,15 @@ describe("증적자료 자료 모음", () => {
 
   it("반기별 설정값 근거를 담는다", () => {
     expect(report.settings).toHaveLength(12);
-    expect(report.settings[0]).toMatchObject({ grade: "설문 추정", period: "2026 상반기(1~6월)" });
+    expect(report.settings[0]).toMatchObject({
+      grade: "설문 추정",
+      period: "2026 상반기(1~6월)",
+      respondents: "188명 / 420명",
+      responseRate: "44.8%",
+      surveyPeriod: "2026-06-01 ~ 2026-06-12",
+      aggregation: "중앙값",
+    });
+    expect(report.settings[0].question).toContain("업무 1건당 절감된 시간");
   });
 
   it("선택한 연도의 변경 이력만 담고, 항목 이름은 한국어다", () => {
@@ -79,7 +87,9 @@ describe("증적자료 자료 모음", () => {
 
   it("지수 계산 결과(YearScore)를 담는다", () => {
     expect(report.yearScore.year).toBe(2026);
-    expect(report.yearScore.countedMonths).toEqual(["2026-09", "2026-10", "2026-11"]);
+    // 시연 데이터는 1~11월. 12월은 서비스 1개만 입력해서 합계가 없다.
+    expect(report.yearScore.countedMonths).toHaveLength(11);
+    expect(report.yearScore.missingMonths).toEqual(["2026-12"]);
   });
 });
 
@@ -107,6 +117,9 @@ describe("엑셀 증적자료", () => {
     expect(text("요약")).toContain("출력 일시: 2026-11-02 16:05");
     expect(text("요약")).toContain("출력자: 김관리");
     expect(text("호출횟수 근거")).toContain("근거 미확인");
+    expect(text("설정값 근거")).toContain("188명 / 420명");
+    expect(text("설정값 근거")).toContain("44.8%");
+    expect(text("설정값 근거")).toContain("절사평균");
     expect(text("보안사고")).toContain("50% 감점 적용");
     expect(text("서비스×월 지수")).toContain("데이터 없음");
     expect(text("변경 이력")).toContain("호출횟수");

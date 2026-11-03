@@ -4,15 +4,17 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { recordChanges } from "../lib/changelog";
 import { changeLogs } from "../lib/db/schema";
 import { seedBase } from "../lib/db/seed";
-import { seedDev } from "../lib/db/seed-dev";
+import { DEV_PROFILES, devCallCount, seedDev } from "../lib/db/seed-dev";
 import type { AppDb } from "../lib/db/types";
 import {
   calculateMonth,
   calculateServiceScore,
   calculateYear,
+  rankServices,
   type ScoreData,
   type ScoreSetting,
 } from "../lib/score";
+import { formatResponseRate } from "../lib/survey";
 import { loadScoreData } from "../lib/score/load";
 import { createTestDb } from "./helpers/db";
 
@@ -143,6 +145,20 @@ describe("연간 지수와 설문 추정 비중", () => {
   });
 });
 
+describe("서비스 순위", () => {
+  it("연간 누적 점수가 높은 순으로 순위를 매기고, 데이터가 없는 서비스는 순위가 없다", () => {
+    const data = fullData(["2026-03", "2026-04"]);
+    // 서비스 3은 호출횟수를 2배로, 서비스 6은 입력을 모두 지운다.
+    data.inputs = data.inputs
+      .filter((row) => row.serviceId !== 6)
+      .map((row) => (row.serviceId === 3 ? { ...row, callCount: row.callCount * 2 } : row));
+    const ranking = rankServices(calculateYear(data));
+    expect(ranking[0]).toMatchObject({ serviceId: 3, rank: 1, barPercent: 100 });
+    expect(ranking[ranking.length - 1]).toMatchObject({ serviceId: 6, rank: null, monthsCounted: 0 });
+    expect(ranking.filter((row) => row.rank !== null)).toHaveLength(5);
+  });
+});
+
 describe("DB에서 읽어 계산하기", () => {
   let db: AppDb;
   let close: () => Promise<void>;
@@ -157,16 +173,45 @@ describe("DB에서 읽어 계산하기", () => {
     await close();
   });
 
-  it("개발용 시드 데이터로 9~11월 합계를 계산한다", async () => {
+  it("시연 데이터로 1~11월 합계를 계산하고, 12월은 데이터 없음이다", async () => {
     const year = calculateYear(await loadScoreData(db, 2026));
-    expect(year.countedMonths).toEqual(["2026-09", "2026-10", "2026-11"]);
+    expect(year.countedMonths).toHaveLength(11);
+    expect(year.missingMonths).toEqual(["2026-12"]);
 
-    // 서비스 i(0~5), 달 m(0~2): 호출 1000(i+1)+150m, 절감 5+i분, 기여도 90-5i%, 보정 1
+    // 9월(하반기 값)을 시연 데이터 정의에서 직접 계산해 맞춰 본다.
     let septemberExpected = 0;
-    for (let i = 0; i < 6; i++) {
-      septemberExpected += 1000 * (i + 1) * (5 + i) * ((90 - 5 * i) / 100);
+    for (const profile of DEV_PROFILES) {
+      septemberExpected += devCallCount(profile, 9) * profile.minutes[1] * (profile.contribution[1] / 100) * profile.correction;
     }
     expect(year.months[8].total).toBeCloseTo(septemberExpected);
+  });
+
+  it("서비스 순위는 KOBI+ > KOBI > 국유변화탐지 > 온비드 AI요약 > 성과나침반 > 슈퍼로이어다", async () => {
+    const ranking = rankServices(calculateYear(await loadScoreData(db, 2026)));
+    expect(ranking.map((row) => row.serviceName)).toEqual([
+      "KOBI+",
+      "KOBI",
+      "국유변화탐지",
+      "온비드 AI요약",
+      "성과나침반",
+      "슈퍼로이어",
+    ]);
+    expect(ranking.map((row) => row.rank)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(ranking[0].barPercent).toBe(100);
+    expect(ranking[5].barPercent).toBeLessThan(20);
+  });
+
+  it("설문 정보(응답자 수, 대상 인원, 조사 기간, 집계 방식)가 계산 재료에 실려 온다", async () => {
+    const data = await loadScoreData(db, 2026);
+    const first = data.settings.find((row) => row.half === "H1" && row.serviceId === data.services[0].id);
+    expect(first?.survey).toMatchObject({
+      respondentCount: 188,
+      targetCount: 420,
+      surveyStart: "2026-06-01",
+      surveyEnd: "2026-06-12",
+      aggregation: "median",
+    });
+    expect(formatResponseRate(188, 420)).toBe("44.8%");
   });
 
   it("변경 이력은 바뀐 항목만 남긴다", async () => {

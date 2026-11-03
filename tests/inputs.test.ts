@@ -58,27 +58,62 @@ describe("월 입력 검사", () => {
 });
 
 describe("설정값 검사", () => {
-  it("보정계수가 비면 1로 저장하고, 둘 다 빈 서비스는 건너뛴다", () => {
-    const result = parseSettingsForm(
-      form({ year: "2026", half: "H2", [`savedMinutes-${ids[0]}`]: "5", [`contributionPct-${ids[0]}`]: "90" }),
-      ids,
-    );
+  // 한 서비스의 모든 칸(점수 값 + 설문 정보)이 채워진 올바른 입력
+  function settingsFields(id: number, overrides: Record<string, string> = {}): Record<string, string> {
+    return {
+      year: "2026",
+      half: "H2",
+      [`savedMinutes-${id}`]: "5",
+      [`contributionPct-${id}`]: "90",
+      [`respondentCount-${id}`]: "120",
+      [`targetCount-${id}`]: "300",
+      [`surveyStart-${id}`]: "2026-12-01",
+      [`surveyEnd-${id}`]: "2026-12-12",
+      [`aggregation-${id}`]: "median",
+      ...overrides,
+    };
+  }
+
+  it("보정계수가 비면 1로 저장하고, 전부 빈 서비스는 건너뛴다", () => {
+    const result = parseSettingsForm(form(settingsFields(ids[0])), ids);
     expect(result).toMatchObject({ ok: true, data: { year: 2026, half: "H2" } });
     if (result.ok) {
       expect(result.data.rows).toHaveLength(1);
-      expect(result.data.rows[0].correctionFactor).toBe(1);
+      expect(result.data.rows[0]).toMatchObject({
+        correctionFactor: 1,
+        respondentCount: 120,
+        targetCount: 300,
+        surveyStart: "2026-12-01",
+        aggregation: "median",
+        questionText: null,
+      });
     }
   });
 
   it("범위를 벗어나거나 한 값만 채우면 거부한다", () => {
-    const base = { year: "2026", half: "H1" };
-    expect(parseSettingsForm(form({ ...base, [`savedMinutes-${ids[0]}`]: "5", [`contributionPct-${ids[0]}`]: "101" }), ids)).toMatchObject({ ok: false });
-    expect(parseSettingsForm(form({ ...base, [`savedMinutes-${ids[0]}`]: "5" }), ids)).toMatchObject({ ok: false });
-    expect(
-      parseSettingsForm(form({ ...base, [`savedMinutes-${ids[0]}`]: "5", [`contributionPct-${ids[0]}`]: "90", [`correctionFactor-${ids[0]}`]: "0" }), ids),
-    ).toMatchObject({ ok: false });
+    const id = ids[0];
+    expect(parseSettingsForm(form(settingsFields(id, { [`contributionPct-${id}`]: "101" })), ids)).toMatchObject({ ok: false });
+    expect(parseSettingsForm(form({ year: "2026", half: "H1", [`savedMinutes-${id}`]: "5" }), ids)).toMatchObject({ ok: false });
+    expect(parseSettingsForm(form(settingsFields(id, { [`correctionFactor-${id}`]: "0" })), ids)).toMatchObject({ ok: false });
     expect(parseSettingsForm(form({ year: "1999", half: "H1" }), ids)).toMatchObject({ ok: false });
     expect(parseSettingsForm(form({ year: "2026", half: "H3" }), ids)).toMatchObject({ ok: false });
+  });
+
+  it("설문 정보가 빠지거나 맞지 않으면 한국어 오류로 거부한다", () => {
+    const id = ids[0];
+    const error = (overrides: Record<string, string>) => {
+      const result = parseSettingsForm(form(settingsFields(id, overrides)), ids);
+      return result.ok ? "" : result.error;
+    };
+    expect(error({ [`respondentCount-${id}`]: "" })).toContain("응답자 수");
+    expect(error({ [`targetCount-${id}`]: "0" })).toContain("대상 인원");
+    expect(error({ [`respondentCount-${id}`]: "301" })).toContain("대상 인원보다 클 수 없습니다");
+    expect(error({ [`surveyStart-${id}`]: "" })).toContain("조사 기간");
+    expect(error({ [`surveyStart-${id}`]: "2026-02-30" })).toContain("조사 기간");
+    expect(error({ [`surveyEnd-${id}`]: "2026-11-30" })).toContain("앞설 수 없습니다");
+    expect(error({ [`aggregation-${id}`]: "" })).toContain("집계 방식");
+    expect(error({ [`aggregation-${id}`]: "mode" })).toContain("집계 방식");
+    expect(error({ [`question-${id}`]: "가".repeat(501) })).toContain("500자");
   });
 });
 
@@ -168,13 +203,28 @@ describe("설문 설정값 저장", () => {
   const data = {
     year: 2026,
     half: "H2" as const,
-    rows: [{ serviceId: 0, savedMinutes: 5, contributionPct: 90, correctionFactor: 1, source: "12월 설문" }],
+    rows: [
+      {
+        serviceId: 0,
+        savedMinutes: 5,
+        contributionPct: 90,
+        correctionFactor: 1,
+        respondentCount: 120,
+        targetCount: 300,
+        surveyStart: "2026-12-01",
+        surveyEnd: "2026-12-12",
+        aggregation: "median" as const,
+        questionText: null,
+        source: "12월 설문",
+      },
+    ],
   };
 
   it("반기별로 저장하고, 고치면 덮어쓰되 이전 값이 이력에 남는다", async () => {
     data.rows[0].serviceId = ids[0];
     const first = await saveSurveySettings(db, data, actor);
-    expect(first.changes).toBe(4);
+    // 점수 값 3 + 설문 정보 5(응답자 수, 대상 인원, 시작일, 종료일, 집계 방식) + 출처 1 (설문 문항은 비어 있어 제외)
+    expect(first.changes).toBe(9);
 
     const second = await saveSurveySettings(
       db,
@@ -197,6 +247,7 @@ describe("설문 설정값 저장", () => {
     const h2 = await loadSettingsForm(db, 2026, "H2");
     expect(h1[0].savedMinutes).toBe(3);
     expect(h2[0].savedMinutes).toBe(8);
+    expect(h2[0]).toMatchObject({ respondentCount: 120, targetCount: 300, aggregation: "median", surveyStart: "2026-12-01" });
     expect(h2[1].savedMinutes).toBeNull();
   });
 });

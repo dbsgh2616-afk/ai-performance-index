@@ -25,6 +25,7 @@ export async function loadScoreData(db: AppDb, year: number): Promise<ScoreData>
       yearMonth: row.yearMonth,
       callCount: row.callCount,
       evidenceGrade: row.evidenceGrade,
+      source: row.source,
     })),
     settings: settingRows.map((row) => ({
       serviceId: row.serviceId,
@@ -34,6 +35,15 @@ export async function loadScoreData(db: AppDb, year: number): Promise<ScoreData>
       contributionPct: row.contributionPct,
       correctionFactor: row.correctionFactor,
       evidenceGrade: row.evidenceGrade,
+      survey: {
+        respondentCount: row.respondentCount,
+        targetCount: row.targetCount,
+        surveyStart: row.surveyStart,
+        surveyEnd: row.surveyEnd,
+        aggregation: row.aggregation,
+        questionText: row.questionText,
+        source: row.source,
+      },
     })),
     securityIncidentMonths: securityRows.map((row) => row.yearMonth),
   };

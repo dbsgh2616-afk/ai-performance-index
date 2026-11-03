@@ -22,6 +22,34 @@
       "when": 1793602824943,
       "tag": "0002_change_logs_append_only",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793606953850,
+      "tag": "0003_survey_info",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793680830697,
+      "tag": "0004_infra_cockpit",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793683053250,
+      "tag": "0005_roi_inputs",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793683529994,
+      "tag": "0006_enable_rls",
+      "breakpoints": true
     }
   ]
 }

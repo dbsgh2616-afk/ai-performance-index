@@ -9,6 +9,13 @@ import type { AppDb } from "../db/types";
 import { formatDateTime } from "../format";
 import { calculateYear, type YearScore } from "../score";
 import { loadScoreData } from "../score/load";
+import {
+  aggregationLabel,
+  formatRespondents,
+  formatResponseRate,
+  formatSurveyPeriod,
+  NOT_RECORDED,
+} from "../survey";
 import { fieldLabel, targetLabel, UNVERIFIED } from "./labels";
 
 export type EvidenceInputRow = {
@@ -28,6 +35,11 @@ export type EvidenceSettingRow = {
   contributionPct: number;
   correctionFactor: number;
   grade: string;
+  respondents: string; // 예: 188명 / 420명
+  responseRate: string; // 예: 44.8%
+  surveyPeriod: string; // 예: 2026-06-01 ~ 2026-06-12
+  aggregation: string; // 평균 / 중앙값 / 절사평균
+  question: string; // 설문 문항 원문
   source: string;
   enteredByName: string;
   enteredAt: string;
@@ -107,6 +119,11 @@ export async function buildEvidenceReport(
       contributionPct: row.contributionPct,
       correctionFactor: row.correctionFactor,
       grade: row.evidenceGrade,
+      respondents: formatRespondents(row.respondentCount, row.targetCount),
+      responseRate: formatResponseRate(row.respondentCount, row.targetCount),
+      surveyPeriod: formatSurveyPeriod(row.surveyStart, row.surveyEnd),
+      aggregation: aggregationLabel(row.aggregation),
+      question: row.questionText ?? NOT_RECORDED,
       source: orUnverified(row.source),
       enteredByName: row.enteredByName,
       enteredAt: formatDateTime(row.enteredAt),

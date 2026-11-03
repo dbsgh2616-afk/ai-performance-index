@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
+/* 어두운 화면이 기본이다. <html class="dark">일 때 dark: 클래스가 적용된다. (app/layout.tsx) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #04050f;
+  --foreground: #e8ecfa;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -12,15 +16,131 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  /* 기본 글자 크기를 키운다 (rem으로 쓴 글자·간격이 함께 커진다) */
+  font-size: 18px;
 }
 
 body {
-  background: var(--background);
+  /* 깊은 우주 바탕 + 보라·핑크·청록 성운 */
+  background:
+    radial-gradient(1000px 620px at 5% -8%, rgba(124, 58, 237, 0.32), transparent 62%),
+    radial-gradient(900px 600px at 98% 4%, rgba(236, 72, 153, 0.2), transparent 62%),
+    radial-gradient(1100px 700px at 60% 112%, rgba(34, 211, 238, 0.12), transparent 62%),
+    var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+}
+
+/* 별은 components/Starfield.tsx(캔버스)가 그린다: 가운데에서 바깥으로 날아오는 1인칭 시야 */
+
+/* 천천히 도는 궤도 (히어로 카드 장식) */
+@keyframes orbit-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbit-spin { animation: none !important; }
+}
+
+/* 유리 질감 카드 */
+@utility glass {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 40px -24px rgba(0, 0, 0, 0.8);
+}
+
+/* 보라→핑크 그라데이션 테두리 카드 */
+@utility gradient-border {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#0a0b1f, #0a0b1f) padding-box,
+    linear-gradient(135deg, #8b5cf6, #ff2e93 70%, #22d3ee) border-box;
+  box-shadow: 0 0 60px -20px rgba(255, 46, 147, 0.45);
+}
+
+/* 네온 그라데이션 글자 */
+@utility neon-text {
+  background: linear-gradient(90deg, #c4b5fd, #f0abfc 45%, #ff7ab8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 유성: 신기록 같은 좋은 소식이 있을 때 카드 위를 지나간다 */
+@keyframes shoot {
+  0% { transform: translate(0, 0) rotate(35deg); opacity: 0; }
+  10% { opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translate(-160px, 112px) rotate(35deg); opacity: 0; }
+}
+.shooting-star {
+  height: 2px;
+  width: 90px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), transparent);
+  filter: drop-shadow(0 0 6px #67e8f9);
+  opacity: 0;
+  animation: shoot 4.5s ease-in infinite;
+  transform-origin: left center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shooting-star { animation: none; }
+}
+
+/* 행성·우주선은 components/Starfield.tsx(캔버스)가 그린다 */
+
+/* 인프라 계기판 (components/dashboard/InfraCockpit.tsx) */
+/* 조종석 계기판 — 위가 불룩한 곡선(대시보드 윗면) + 그라데이션 테두리 */
+.cockpit-dash {
+  border: 1px solid transparent;
+  border-radius: 50% 50% 0 0 / 64px 64px 0 0;
+  background:
+    linear-gradient(180deg, #0d1230, #05060f) padding-box,
+    linear-gradient(90deg, #8b5cf6, #67e8f9 50%, #d946ef) border-box;
+}
+/* 앞유리 양옆 기둥 */
+.cockpit-pillar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 7vw;
+  z-index: -5; /* 별 위, 내용 아래에 둔다 */
+  background: linear-gradient(180deg, rgba(5, 6, 15, 0.2), #090c20 60%, #05060f);
+  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.35));
+}
+.cockpit-pillar-left {
+  left: 0;
+  clip-path: polygon(0 0, 16% 0, 100% 100%, 0 100%);
+}
+.cockpit-pillar-right {
+  right: 0;
+  clip-path: polygon(84% 0, 100% 0, 100% 100%, 0 100%);
+}@keyframes needle-in {
+  from { transform: rotate(-90deg); }
+  to { transform: rotate(var(--needle)); }
+}
+.infra-needle {
+  transform: rotate(var(--needle));
+  animation: needle-in 1.4s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+@keyframes cockpit-sweep {
+  0% { background-position: -40% 0; }
+  100% { background-position: 140% 0; }
+}
+.cockpit-sweep {
+  background: linear-gradient(90deg, transparent 0, rgba(255, 255, 255, 0.95) 50%, transparent 100%) no-repeat;
+  background-size: 30% 100%;
+  animation: cockpit-sweep 4s linear infinite;
+}
+@keyframes cockpit-scan {
+  to { background-position: 0 6px; }
+}
+.cockpit-scan {
+  background-image: repeating-linear-gradient(0deg, rgba(103, 232, 249, 0.06) 0 1px, transparent 1px 3px);
+  animation: cockpit-scan 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .infra-needle, .cockpit-sweep, .cockpit-scan { animation: none; }
 }

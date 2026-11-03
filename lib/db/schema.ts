@@ -5,6 +5,7 @@ import {
   bigint,
   boolean,
   check,
+  date,
   integer,
   numeric,
   pgEnum,
@@ -24,12 +25,17 @@ export const evidenceGradeEnum = pgEnum("evidence_grade", ["실측", "설문 추
 // 반기: H1 = 1~6월(상반기), H2 = 7~12월(하반기)
 export const halfEnum = pgEnum("half", ["H1", "H2"]);
 
+// 설문 값을 하나로 모으는 방법: 평균 / 중앙값 / 절사평균(양 끝 값을 잘라낸 평균)
+export const aggregationEnum = pgEnum("aggregation_method", ["mean", "median", "trimmed_mean"]);
+
 // 변경 이력의 대상 종류
 export const changeTargetEnum = pgEnum("change_target", [
   "monthly_input", // 월별 호출횟수
   "monthly_security", // 월별 보안사고
   "survey_setting", // 반기별 설문 설정값
   "account", // 계정
+  "infra_metric", // 월별 AI 인프라 지표 (GPU·메모리·스토리지·가동률)
+  "roi_input", // ROI 계산에 쓰는 인프라 도입비용·운영비·단가
 ]);
 
 // AI 서비스 6개. 추가·삭제 기능은 만들지 않는다. (PRD 6번)
@@ -99,6 +105,46 @@ export const monthlyInputs = pgTable(
   ],
 );
 
+// 월마다 1줄. 기관 AI 인프라(GPU·메모리·스토리지·가동률)의 월 대표값(%). 지수 계산에는 쓰지 않고 대시보드 계기판에만 쓴다.
+// 서버에서 자동으로 읽지 않고 관리자가 월 1회 직접 입력한다.
+export const infraMetrics = pgTable(
+  "infra_metrics",
+  {
+    yearMonth: text("year_month").primaryKey(),
+    gpuUsagePct: numeric("gpu_usage_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
+    memoryUsagePct: numeric("memory_usage_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
+    storageUsagePct: numeric("storage_usage_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
+    uptimePct: numeric("uptime_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
+    source: text("source"),
+    enteredById: integer("entered_by_id").notNull(),
+    enteredByName: text("entered_by_name").notNull(),
+    enteredAt: timestamp("entered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    check("infra_metrics_year_month_ck", sql`${t.yearMonth} ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$'`),
+    check("infra_metrics_gpu_ck", sql`${t.gpuUsagePct} between 0 and 100`),
+    check("infra_metrics_memory_ck", sql`${t.memoryUsagePct} between 0 and 100`),
+    check("infra_metrics_storage_ck", sql`${t.storageUsagePct} between 0 and 100`),
+    check("infra_metrics_uptime_ck", sql`${t.uptimePct} between 0 and 100`),
+  ],
+);
+
+// ROI 계산 재료. 항목(key)마다 1줄이고 항목 목록은 lib/roi.ts의 ROI_FIELDS가 정한다.
+// 인프라 도입비용 항목들, 연간 운영비, 내용연수, 시간당 인건비 단가가 들어 있다. (금액은 원)
+export const roiInputs = pgTable("roi_inputs", {
+  key: text("key").primaryKey(),
+  value: numeric("value", { precision: 18, scale: 2, mode: "number" }).notNull(),
+  enteredById: integer("entered_by_id").notNull(),
+  enteredByName: text("entered_by_name").notNull(),
+  enteredAt: timestamp("entered_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
 // 월마다 1줄. 보안사고가 있는 달은 서비스 6개 합산 점수를 50% 감점한다.
 // 기록이 없는 달은 "사고 없음"으로 본다. (DESIGN 5.2)
 export const monthlySecurity = pgTable(
@@ -139,6 +185,13 @@ export const surveySettings = pgTable(
       .notNull()
       .default(1),
     evidenceGrade: evidenceGradeEnum("evidence_grade").notNull().default("설문 추정"),
+    // 설문 정보: 이 값이 몇 명의 어떤 조사에서 나왔는지 남긴다. (설문 값을 데이터로 쓸 수 있는 근거)
+    respondentCount: integer("respondent_count"), // 응답자 수
+    targetCount: integer("target_count"), // 대상 인원(전체 이용자 수). 응답률 = 응답자 수 ÷ 대상 인원
+    surveyStart: date("survey_start", { mode: "string" }), // 조사 시작일
+    surveyEnd: date("survey_end", { mode: "string" }), // 조사 종료일
+    aggregation: aggregationEnum("aggregation"), // 집계 방식
+    questionText: text("question_text"), // 설문 문항 원문
     source: text("source"),
     // 로그인 정보에서 자동으로 채운다. 비어 있을 수 없다.
     enteredById: integer("entered_by_id").notNull(),
@@ -157,6 +210,16 @@ export const surveySettings = pgTable(
     check("survey_settings_saved_minutes_ck", sql`${t.savedMinutes} >= 0`),
     check("survey_settings_contribution_ck", sql`${t.contributionPct} BETWEEN 0 AND 100`),
     check("survey_settings_correction_ck", sql`${t.correctionFactor} > 0`),
+    check("survey_settings_respondent_ck", sql`${t.respondentCount} IS NULL OR ${t.respondentCount} >= 0`),
+    check("survey_settings_target_ck", sql`${t.targetCount} IS NULL OR ${t.targetCount} > 0`),
+    check(
+      "survey_settings_response_ck",
+      sql`${t.respondentCount} IS NULL OR ${t.targetCount} IS NULL OR ${t.respondentCount} <= ${t.targetCount}`,
+    ),
+    check(
+      "survey_settings_period_ck",
+      sql`${t.surveyStart} IS NULL OR ${t.surveyEnd} IS NULL OR ${t.surveyEnd} >= ${t.surveyStart}`,
+    ),
   ],
 );
 
@@ -177,5 +240,7 @@ export type Service = typeof services.$inferSelect;
 export type Account = typeof accounts.$inferSelect;
 export type MonthlyInput = typeof monthlyInputs.$inferSelect;
 export type MonthlySecurity = typeof monthlySecurity.$inferSelect;
+export type InfraMetric = typeof infraMetrics.$inferSelect;
+export type RoiInputRow = typeof roiInputs.$inferSelect;
 export type SurveySetting = typeof surveySettings.$inferSelect;
 export type ChangeLog = typeof changeLogs.$inferSelect;

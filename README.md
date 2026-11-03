@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI성과활용지수
 
-## Getting Started
+공사가 운영하는 AI 서비스 6개(KOBI, KOBI+, 국유변화탐지, 슈퍼로이어, 성과나침반, 온비드 AI요약)의 성과를 **하나의 지수**로 산출·관리하고,
+경영평가에 낼 **증적자료(PDF·엑셀)**를 뽑아 주는 내부용 웹 서비스입니다.
 
-First, run the development server:
+> 이 저장소의 화면에 나오는 숫자는 파일럿 단계의 **시연용 임의 값**입니다. 실제 성과 수치가 아닙니다.
+
+## 무엇을 하나요
+
+- **성과지수 산출**: `호출횟수(실측) × 건당 업무절감시간 × 업무기여도(설문) × 보정계수`. 월별 지수는 서비스 6개를 합산하고, 연간 지수는 월별 지수를 누적합니다.
+- **보안사고 감점**: 사고가 난 달은 합산 점수를 50% 감점합니다.
+- **근거 표시**: 모든 수치에 근거 등급(실측 / 설문 추정)을 붙이고, 설문 추정치가 지수에서 차지하는 비중을 %로 보여줍니다. 출처가 없으면 "근거 미확인"으로 표시합니다.
+- **변경 이력**: 값을 고쳐도 이전 값은 지우지 않고 이력으로 남깁니다. 늦게 들어온 값은 과거 달 지수도 다시 계산합니다.
+- **대시보드**: 월별 AI 지수 선그래프, 전월 대비 증감, 서비스 순위, 서비스별 월 지수, 설문 정보(응답자 수·응답률·조사 기간·집계 방식), 서비스 입력 상태등, 우주 이벤트.
+- **AI 인프라 계기판**: GPU·메모리·스토리지 사용률과 가동률, 도입비용을 반영한 **추정 ROI**.
+- **증적자료 출력**: PDF와 엑셀. 출력 일시와 출력자를 함께 적습니다.
+- **권한**: 관리자(입력·수정·계정 관리)와 조회자(조회만). 모든 화면은 로그인 후에만 열립니다.
+
+## 기술 스택
+
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · PostgreSQL(Drizzle ORM) · Vercel
+
+## 문서
+
+| 문서 | 내용 |
+|---|---|
+| [PRD.md](PRD.md) | 기획서: 무엇을 왜 만드는가, 핵심 규칙, 범위 |
+| [PLAN.md](PLAN.md) | 구현 계획: 작업 단위와 완료 기준 |
+| [DESIGN.md](DESIGN.md) | 설계: 화면, 데이터 구조, 서버 기능 |
+| [DEPLOY.md](DEPLOY.md) | 배포 준비 안내 |
+| [CLAUDE.md](CLAUDE.md) | AI 개발 도구가 따르는 작업 규칙 |
+
+## 내 컴퓨터에서 실행해 보기
+
+DB를 따로 준비하지 않아도 임시 DB로 화면을 볼 수 있습니다. (종료하면 데이터는 사라집니다)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev:local   # http://localhost:3100
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+테스트와 검사:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test
+npm run lint
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 환경 변수
 
-## Learn More
+값은 `.env`(저장소에 올리지 않음) 또는 Vercel 환경 변수에만 적습니다.
 
-To learn more about Next.js, take a look at the following resources:
+| 이름 | 용도 |
+|---|---|
+| `DATABASE_URL` | PostgreSQL 접속 주소 |
+| `SESSION_SECRET` | 로그인 증표 서명용 비밀 값 (32자 이상) |
+| `INITIAL_ADMIN_ID`, `INITIAL_ADMIN_PASSWORD`, `INITIAL_ADMIN_NAME` | 첫 관리자 계정을 만들 때만 사용 (`npm run seed`) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+운영 DB 준비 순서: `npm run db:migrate` → `npm run seed` (→ 시연 데이터가 필요하면 `npm run seed:dev -- --yes`)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 보안
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 비밀번호는 암호화해서 저장하고, 로그인 5회 연속 실패 시 15분간 막으며, 30분 동안 쓰지 않으면 자동 로그아웃합니다.
+- 서버의 모든 기능은 호출할 때마다 권한을 다시 확인합니다.
+- DB 표는 행 수준 보안(RLS)을 켜 두어, 서버 밖에서 표를 직접 읽거나 쓰는 접근을 막습니다.
+- 서비스 이용자의 개인정보는 저장하지 않습니다. (호출횟수는 숫자만 저장)

@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth/guard";
 import { currentYear, currentYearMonth } from "@/lib/date";
 import { getDb } from "@/lib/db";
 import { buildEvidenceReport } from "@/lib/evidence/report";
+import { loadScoreData } from "@/lib/score/load";
 
 export default function EvidencePage({ searchParams }: PageProps<"/evidence">) {
   return (
@@ -23,7 +24,9 @@ async function EvidenceContent({ searchParams }: { searchParams: PageProps<"/evi
   const nowYear = currentYear();
   const year = Number.isInteger(yearParam) && yearParam >= 2000 && yearParam <= 2099 ? yearParam : nowYear;
 
-  const report = await buildEvidenceReport(getDb(), year, admin.name);
+  const db = getDb();
+  const report = await buildEvidenceReport(db, year, admin.name);
+  const data = await loadScoreData(db, year);
   const focusMonth = year === nowYear ? currentYearMonth() : `${year}-12`;
 
   return (
@@ -50,7 +53,7 @@ async function EvidenceContent({ searchParams }: { searchParams: PageProps<"/evi
       <div className="flex flex-wrap items-center gap-3">
         <a
           href={`/api/export/pdf?year=${year}`}
-          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-fuchsia-500 dark:text-white dark:shadow-[0_0_16px_rgba(217,70,239,0.55)] dark:hover:bg-fuchsia-400"
         >
           PDF 내려받기
         </a>
@@ -69,7 +72,14 @@ async function EvidenceContent({ searchParams }: { searchParams: PageProps<"/evi
         <li>{year}년 변경 이력 {report.changes.length}건이 파일에 들어갑니다.</li>
       </ul>
 
-      <DashboardView yearScore={report.yearScore} focusMonth={focusMonth} focusLabel={year === nowYear ? "이번 달" : "12월"} isAdmin={false} />
+      <DashboardView
+        yearScore={report.yearScore}
+        settings={data.settings}
+        serviceNames={Object.fromEntries(data.services.map((service) => [service.id, service.name]))}
+        focusMonth={focusMonth}
+        focusLabel={year === nowYear ? "이번 달" : "12월"}
+        isAdmin={false}
+      />
     </div>
   );
 }

@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# 작업 도구 상태와 삭제 대기 폴더 (올리지 않는다)
+/.bkit/
+/trash-can/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

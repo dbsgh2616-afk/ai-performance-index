@@ -28,7 +28,10 @@ export function getDb(): Db {
     throw new Error("DATABASE_URL이 설정되지 않았습니다. .env에 DB 접속 주소를 넣어 주세요.");
   }
 
-  const pool = new Pool({ connectionString, max: MAX_CONNECTIONS });
+  // 내 컴퓨터(localhost)의 임시 DB가 아니면 SSL로 암호화해서 연결한다. (Supabase·Neon 등 클라우드 DB는 필수)
+  // 클라우드 DB의 인증서는 일반 인증서 목록에 없는 경우가 있어 인증서 검증은 하지 않고 암호화만 켠다.
+  const isLocal = /@(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(connectionString);
+  const pool = new Pool({ connectionString, max: MAX_CONNECTIONS, ssl: isLocal ? undefined : { rejectUnauthorized: false } });
 
   // 연결이 끊기면 서버가 멈추지 않도록 오류를 기록만 한다.
   // 접속 주소(비밀 값)는 기록하지 않고 오류 메시지만 남긴다. (DESIGN 8장 "DB 오류")
