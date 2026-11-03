@@ -42,6 +42,7 @@ const QUESTION =
   "AI 서비스를 사용한 뒤 업무 1건당 절감된 시간(분)과, 업무 결과에 대한 AI의 기여도(%)를 응답해 주세요.";
 
 export const DEV_ROI = {
+  gpu_count: 8, // 가상의 GPU 8대 (대당 1,250만원 → GPU 도입비 1억원)
   capex_gpu: 100_000_000,
   capex_storage: 40_000_000,
   capex_network: 30_000_000,

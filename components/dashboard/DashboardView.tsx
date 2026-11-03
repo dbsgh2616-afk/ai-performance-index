@@ -29,6 +29,7 @@ type Props = {
   isAdmin: boolean;
   chart?: ReactNode;
   statuses?: ServiceStatus[]; // 서비스 상태등. 없으면 카드를 그리지 않는다.
+  gpuCount?: number; // GPU 수량. 계기판의 GPU 다이얼 이름 옆에 보여 준다.
   roi?: RoiResult | null; // 추정 ROI. 계기판 가운데에 보여 준다.
   infra?: InfraSnapshot | null; // AI 인프라 계기판. undefined면 카드를 그리지 않고, null이면 "데이터 없음"으로 그린다.
 };
@@ -448,7 +449,7 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
   );
 }
 
-export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart, statuses, infra, roi = null }: Props) {
+export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart, statuses, infra, roi = null, gpuCount }: Props) {
   const found = yearScore.months.findIndex((month) => month.yearMonth === focusMonth);
   const focusIndex = found === -1 ? 11 : found;
   const focus = yearScore.months[focusIndex];
@@ -458,7 +459,7 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
 
   return (
     // 계기판이 화면 아래에 붙어 있으므로, 그 높이만큼 아래를 비워 내용이 가려지지 않게 한다.
-    <div className={`flex flex-col gap-6 ${infra !== undefined ? "pb-72 sm:pb-64" : ""}`}>
+    <div className={`flex flex-col gap-6 ${infra !== undefined ? "pb-64 sm:pb-52" : ""}`}>
       <SummaryCards yearScore={yearScore} focus={focus} focusLabel={focusLabel} previous={previous} />
 
       {/* 메인: 월별 AI 지수 선그래프. 연간 누적 지수 바로 아래에 둔다. */}
@@ -495,7 +496,7 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
       <SurveyTable settings={settings} serviceNames={serviceNames} />
 
       {/* 화면 하단에 고정되는 AI 인프라 계기판 */}
-      {infra !== undefined && <InfraCockpit snapshot={infra} yearMonth={focus.yearMonth} isAdmin={isAdmin} roi={roi} />}
+      {infra !== undefined && <InfraCockpit snapshot={infra} yearMonth={focus.yearMonth} isAdmin={isAdmin} roi={roi} gpuCount={gpuCount} />}
     </div>
   );
 }

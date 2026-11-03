@@ -107,6 +107,12 @@ describe("ROI 입력 검사와 저장", () => {
     });
   });
 
+  it("GPU 수량은 정수만 받고, 없어도 ROI를 계산할 수 있다", () => {
+    expect(parseRoiForm(form({ gpu_count: "8" }))).toEqual({ ok: true, data: { gpu_count: 8 } });
+    expect(parseRoiForm(form({ gpu_count: "2.5" }))).toMatchObject({ ok: false, error: expect.stringContaining("GPU 수량") });
+    expect(computeRoi(DATA, { ...VALUES, gpu_count: 8 }, "2026-03")!.roiPct).toBeCloseTo(computeRoi(DATA, VALUES, "2026-03")!.roiPct);
+  });
+
   it("음수·글자·내용연수 0은 한국어 오류로 거부한다", () => {
     expect(parseRoiForm(form({ capex_gpu: "-1" }))).toMatchObject({ ok: false, error: expect.stringContaining("GPU 서버 도입비") });
     expect(parseRoiForm(form({ hourly_rate: "abc" }))).toMatchObject({ ok: false });

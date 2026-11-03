@@ -16,6 +16,7 @@ import type { ParseResult } from "./validation/inputs";
 
 export type RoiKey =
   | "capex_gpu"
+  | "gpu_count"
   | "capex_storage"
   | "capex_network"
   | "capex_license"
@@ -24,9 +25,11 @@ export type RoiKey =
   | "life_years"
   | "hourly_rate";
 
-export type RoiValues = Record<RoiKey, number>;
+// GPU 수량(gpu_count)은 화면에 보여 주기만 하고 ROI 계산에는 필요하지 않으므로 없어도 된다.
+export type RoiValues = Record<Exclude<RoiKey, "gpu_count">, number> & { gpu_count?: number };
 
-export const ROI_FIELDS: { key: RoiKey; label: string; unit: "원" | "년"; group: "capex" | "opex" | "rate" }[] = [
+export const ROI_FIELDS: { key: RoiKey; label: string; unit: "원" | "년" | "대"; group: "capex" | "opex" | "rate"; optional?: boolean }[] = [
+  { key: "gpu_count", label: "GPU 수량", unit: "대", group: "capex", optional: true },
   { key: "capex_gpu", label: "GPU 서버 도입비", unit: "원", group: "capex" },
   { key: "capex_storage", label: "스토리지 도입비", unit: "원", group: "capex" },
   { key: "capex_network", label: "네트워크·보안장비 도입비", unit: "원", group: "capex" },
@@ -38,6 +41,8 @@ export const ROI_FIELDS: { key: RoiKey; label: string; unit: "원" | "년"; grou
 ];
 
 export const ROI_KEYS = ROI_FIELDS.map((field) => field.key);
+// ROI를 계산하려면 이 항목들이 모두 있어야 한다.
+const REQUIRED_KEYS = ROI_FIELDS.filter((field) => !field.optional).map((field) => field.key);
 
 export function roiLabel(key: string): string {
   return ROI_FIELDS.find((field) => field.key === key)?.label ?? key;
@@ -70,7 +75,7 @@ const halfOfMonth = (yearMonth: string) => (Number(yearMonth.slice(5, 7)) <= 6 ?
 // 올해 1월부터 focusMonth까지, 호출횟수가 입력된 달을 기준으로 계산한다.
 // 입력값이 모자라거나 비용이 0이면 계산하지 못하므로 null(데이터 없음)이다.
 export function computeRoi(data: ScoreData, values: Partial<RoiValues> | null, focusMonth: string): RoiResult | null {
-  if (!values || ROI_KEYS.some((key) => values[key] === undefined)) return null;
+  if (!values || REQUIRED_KEYS.some((key) => values[key as keyof RoiValues] === undefined)) return null;
   const v = values as RoiValues;
   if (v.life_years <= 0) return null;
 
@@ -103,6 +108,13 @@ const amountSchema = (label: string, max: number, min = 0) =>
     .transform(Number)
     .pipe(z.number().min(min, `${label}은(는) ${min} 이상이어야 합니다.`).max(max, `${label}이(가) 너무 큽니다.`));
 
+// GPU 수량처럼 0 이상의 정수
+const countSchema = (label: string) =>
+  z
+    .string()
+    .regex(/^\d{1,6}$/, `${label}은(는) 0 이상의 정수로 입력하세요.`)
+    .transform(Number);
+
 function field(formData: FormData, name: string): string {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim().replace(/,/g, "") : "";
@@ -114,7 +126,8 @@ export function parseRoiForm(formData: FormData): ParseResult<Partial<RoiValues>
   for (const item of ROI_FIELDS) {
     const raw = field(formData, item.key);
     if (raw === "") continue;
-    const schema = item.key === "life_years" ? amountSchema(item.label, 50, 1) : amountSchema(item.label, 1e13);
+    const schema =
+      item.key === "life_years" ? amountSchema(item.label, 50, 1) : item.key === "gpu_count" ? countSchema(item.label) : amountSchema(item.label, 1e13);
     const parsed = schema.safeParse(raw);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
     values[item.key] = parsed.data;

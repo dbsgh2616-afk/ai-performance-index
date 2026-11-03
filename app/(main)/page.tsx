@@ -40,7 +40,8 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
   const focusScore = yearScore.months.find((month) => month.yearMonth === focusMonth) ?? yearScore.months[11];
   const statuses = serviceStatuses(data, focusScore);
   const infra = await loadInfra(getDb(), focusScore.yearMonth);
-  const roi = computeRoi(data, await loadRoiInputs(getDb()), focusScore.yearMonth);
+  const roiValues = await loadRoiInputs(getDb());
+  const roi = computeRoi(data, roiValues, focusScore.yearMonth);
 
   const gaugeMonths: GaugeMonth[] = yearScore.months.map((month) => ({
     label: formatMonthLabel(month.yearMonth),
@@ -84,6 +85,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
         statuses={statuses}
         infra={infra}
         roi={roi}
+        gpuCount={roiValues?.gpu_count}
       />
     </div>
   );

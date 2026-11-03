@@ -132,6 +132,8 @@ describe("계기판 화면", () => {
   it("다이얼 4개와 구간 이름이 나온다", () => {
     const roi = { months: 11, hours: 1500, benefit: 99_000_000, cost: 88_000_000, monthlyCost: 8_000_000, roiPct: 12.5 };
     const html = renderToStaticMarkup(<InfraCockpit snapshot={snapshot} yearMonth="2026-11" isAdmin roi={roi} />);
+    expect(html).not.toContain("GPU 사용률 · 8대");
+    expect(renderToStaticMarkup(<InfraCockpit snapshot={snapshot} yearMonth="2026-11" isAdmin roi={roi} gpuCount={8} />)).toContain("GPU 사용률 · 8대");
     expect(html).toContain("추정 ROI");
     expect(html).toContain("+12.5%");
     expect(html).toContain("효과 9,900만원 · 비용 8,800만원");

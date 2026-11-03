@@ -101,7 +101,17 @@ body {
     linear-gradient(90deg, #8b5cf6, #67e8f9 50%, #d946ef) border-box;
 }
 /* 앞유리 양옆 기둥 */
+/* 3D: 계기판 윗면이 앞으로 눕는다. 자식(다이얼·ROI 패널)은 판 위로 떠 있게 3D 공간을 유지한다. */
+.cockpit-3d {
+  transform: rotateX(16deg);
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+}
+.cockpit-3d-row {
+  transform-style: preserve-3d;
+}
 .cockpit-pillar {
+
   position: fixed;
   top: 0;
   bottom: 0;
