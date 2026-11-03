@@ -24,8 +24,13 @@ type Props = {
   chart?: ReactNode;
 };
 
-const cardClass =
-  "rounded-2xl border border-fuchsia-500/20 bg-zinc-900/70 p-5 shadow-[0_0_28px_rgba(168,85,247,0.12)]";
+// 유리 질감 카드. 색은 포인트에만 쓴다. (app/globals.css의 glass 유틸리티)
+const cardClass = "glass rounded-3xl p-6";
+
+// 카드 위쪽의 작은 영문 라벨 (예: 01 / RANKING)
+function Eyebrow({ children }: { children: ReactNode }) {
+  return <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-fuchsia-300/70">{children}</p>;
+}
 
 function monthNote(month: MonthScore): string | undefined {
   if (month.total === null) {
@@ -43,72 +48,90 @@ function SummaryCards({ yearScore, focus, focusLabel }: { yearScore: YearScore; 
   const share = yearScore.surveyShare;
 
   return (
-    <section aria-label="요약" className="grid gap-4 md:grid-cols-3">
-      <div className={`${cardClass} border-l-4 border-l-fuchsia-500`}>
-        <p className="text-sm font-medium text-zinc-500">{yearScore.year}년 연간 누적 지수</p>
-        <p className="mt-2 bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-4xl font-bold tabular-nums tracking-tight text-transparent">
+    <section aria-label="요약" className="grid gap-4 lg:grid-cols-5">
+      <div className="gradient-border relative flex flex-col justify-center overflow-hidden rounded-3xl p-8 lg:col-span-3">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-fuchsia-500/30 blur-3xl" aria-hidden />
+        <Eyebrow>Annual index</Eyebrow>
+        <p className="mt-1 text-sm font-medium text-zinc-300">{yearScore.year}년 연간 누적 지수</p>
+        <p className="neon-text mt-4 font-mono text-6xl font-bold tabular-nums tracking-tighter sm:text-7xl">
           {formatScore(yearScore.countedMonths.length === 0 ? null : yearScore.annualTotal)}
         </p>
-        <p className="mt-2 text-xs text-zinc-500">
-          {yearScore.countedMonths.length}개월 합산{top ? ` · 1위 ${top.serviceName}` : ""}
+        <p className="mt-5 flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+          <span className="rounded-full border border-white/10 px-3 py-1">{yearScore.countedMonths.length}개월 합산</span>
+          {top && (
+            <span className="rounded-full bg-fuchsia-500/20 px-3 py-1 font-medium text-fuchsia-200">
+              1위 {top.serviceName}
+            </span>
+          )}
         </p>
       </div>
 
-      <div className={`${cardClass} border-l-4 border-l-violet-500`}>
-        <p className="text-sm font-medium text-zinc-500">{focusLabel} 합계</p>
-        <p className="mt-2 bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-4xl font-bold tabular-nums tracking-tight text-transparent">{formatScore(focus.total)}</p>
-        <p className="mt-2 text-xs text-zinc-500">{monthNote(focus) ?? "서비스 6개 모두 계산됨"}</p>
-      </div>
-
-      <div className={`${cardClass} border-l-4 border-l-pink-500`}>
-        <p className="text-sm font-medium text-zinc-500">설문 추정 비중</p>
-        <p className="mt-2 bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-4xl font-bold tabular-nums tracking-tight text-transparent">{formatPercent(share)}</p>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800" aria-hidden>
-          <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-400 shadow-[0_0_10px_rgba(236,72,153,0.7)]" style={{ width: `${share ?? 0}%` }} />
+      <div className="grid gap-4 lg:col-span-2">
+        <div className={cardClass}>
+          <Eyebrow>Month</Eyebrow>
+          <p className="mt-1 text-sm font-medium text-zinc-300">{focusLabel} 합계</p>
+          <p className="mt-3 font-mono text-4xl font-bold tabular-nums tracking-tight text-white">{formatScore(focus.total)}</p>
+          <p className="mt-2 text-xs text-zinc-500">{monthNote(focus) ?? "서비스 6개 모두 계산됨"}</p>
         </div>
-        <p className="mt-2 text-xs text-zinc-500">호출횟수(실측), 업무절감시간·업무기여도(설문 추정) 중 설문 값의 비율</p>
+
+        <div className={cardClass}>
+          <Eyebrow>Survey share</Eyebrow>
+          <div className="mt-1 flex items-end justify-between gap-3">
+            <p className="text-sm font-medium text-zinc-300">설문 추정 비중</p>
+            <p className="font-mono text-3xl font-bold tabular-nums text-pink-300">{formatPercent(share)}</p>
+          </div>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden>
+            <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500" style={{ width: `${share ?? 0}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-zinc-500">호출횟수(실측), 업무절감시간·업무기여도(설문 추정) 중 설문 값의 비율</p>
+        </div>
       </div>
     </section>
   );
 }
 
-const RANK_STYLES = [
-  "bg-fuchsia-400 text-fuchsia-950 shadow-[0_0_12px_rgba(232,121,249,0.8)]",
-  "bg-violet-400 text-violet-950 shadow-[0_0_10px_rgba(167,139,250,0.7)]",
-  "bg-pink-300 text-pink-950 shadow-[0_0_10px_rgba(249,168,212,0.6)]",
-];
-
 function RankingCard({ yearScore }: { yearScore: YearScore }) {
   const ranking = rankServices(yearScore);
 
   return (
-    <section aria-label="서비스 순위" className={`${cardClass} flex flex-col gap-4`}>
+    <section aria-label="서비스 순위" className={`${cardClass} flex h-full flex-col gap-5`}>
       <div>
-        <h2 className="text-lg font-bold">서비스 순위</h2>
+        <Eyebrow>01 / Ranking</Eyebrow>
+        <h2 className="mt-1 text-lg font-bold">서비스 순위</h2>
         <p className="text-xs text-zinc-500">{yearScore.year}년 연간 누적 점수 기준 (점수가 계산된 달의 합)</p>
       </div>
-      <ol className="flex flex-col gap-3">
-        {ranking.map((row) => (
-          <li key={row.serviceId} className="flex items-center gap-3">
-            <span
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                row.rank !== null && row.rank <= 3 ? RANK_STYLES[row.rank - 1] : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-              }`}
-              aria-label={row.rank === null ? "순위 없음" : `${row.rank}위`}
-            >
-              {row.rank ?? "-"}
-            </span>
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-sm font-medium">{row.serviceName}</span>
-                <span className="text-sm font-bold tabular-nums">{row.rank === null ? NO_DATA : formatScore(row.annualScore)}</span>
+      <ol className="flex flex-col gap-4">
+        {ranking.map((row) => {
+          const first = row.rank === 1;
+          return (
+            <li key={row.serviceId} className="flex items-center gap-4">
+              <span
+                className={`w-7 shrink-0 text-center font-mono text-2xl font-bold tabular-nums ${
+                  first ? "neon-text" : "text-zinc-600"
+                }`}
+                aria-label={row.rank === null ? "순위 없음" : `${row.rank}위`}
+              >
+                {row.rank ?? "-"}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className={`truncate text-sm ${first ? "font-bold text-white" : "font-medium text-zinc-300"}`}>
+                    {row.serviceName}
+                  </span>
+                  <span className="font-mono text-sm tabular-nums text-zinc-300">
+                    {row.rank === null ? NO_DATA : formatScore(row.annualScore)}
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden>
+                  <div
+                    className={`h-full rounded-full ${first ? "bg-gradient-to-r from-violet-500 to-pink-500" : "bg-violet-400/50"}`}
+                    style={{ width: `${row.barPercent}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800" aria-hidden>
-                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.6)]" style={{ width: `${row.barPercent}%` }} />
-              </div>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ol>
     </section>
   );
@@ -132,7 +155,8 @@ function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
     <section aria-label="서비스×월 표" className={`${cardClass} flex flex-col gap-4`}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="text-lg font-bold">서비스별 월 지수</h2>
+          <Eyebrow>03 / Monthly</Eyebrow>
+          <h2 className="mt-1 text-lg font-bold">서비스별 월 지수</h2>
           <p className="text-xs text-zinc-500">칸이 진할수록 점수가 높습니다.</p>
         </div>
         <p className="flex items-center gap-3 text-xs text-zinc-400">
@@ -150,7 +174,7 @@ function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
         <p className="text-sm text-zinc-500">{NO_DATA} — 아직 입력된 달이 없습니다.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-1 text-sm tabular-nums">
+          <table className="w-full border-separate border-spacing-1 font-mono text-sm tabular-nums">
             <thead>
               <tr className="text-xs text-zinc-400">
                 <th className="px-2 py-1 text-left font-medium">서비스</th>
@@ -238,7 +262,7 @@ function SurveyHalf({ row }: { row: ScoreSetting }) {
   const rate = responseRate(respondents, target);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-violet-500/20 bg-black/30 p-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
       <div className="flex items-center justify-between">
         <span className="rounded-full bg-pink-500/15 px-2.5 py-0.5 text-xs font-bold text-pink-300">
           {row.half === "H1" ? "상반기" : "하반기"}
@@ -276,7 +300,8 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
   return (
     <section aria-label="설문 정보" className={`${cardClass} flex flex-col gap-4`}>
       <div>
-        <h2 className="text-lg font-bold">설문 정보</h2>
+        <Eyebrow>04 / Survey</Eyebrow>
+        <h2 className="mt-1 text-lg font-bold">설문 정보</h2>
         <p className="text-xs text-zinc-500">업무절감시간·업무기여도가 어떤 조사에서 나왔는지 보여주는 근거입니다.</p>
       </div>
       {serviceIds.length === 0 ? (
@@ -284,7 +309,7 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {serviceIds.map((id) => (
-            <article key={id} className="flex flex-col gap-3 rounded-2xl border border-violet-500/20 p-4">
+            <article key={id} className="flex flex-col gap-3 rounded-2xl border border-white/10 p-4">
               <h3 className="font-bold">{serviceNames[id] ?? id}</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 {sorted

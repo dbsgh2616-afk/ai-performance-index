@@ -43,9 +43,12 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-2xl font-bold">대시보드</h1>
-        <form method="get" className="flex items-end gap-2">
-          <label className="flex flex-col gap-1 text-sm font-medium">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-fuchsia-300/70">AI performance index</p>
+          <h1 className="neon-text mt-1 text-4xl font-bold tracking-tight">대시보드</h1>
+        </div>
+        <form method="get" className="glass flex items-center gap-1 rounded-full p-1 pl-4">
+          <label className="flex items-center gap-2 text-sm text-zinc-400">
             연도
             <input
               type="number"
@@ -53,10 +56,10 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
               min={2000}
               max={2099}
               defaultValue={year}
-              className="w-28 rounded border border-zinc-300 bg-transparent px-3 py-2 font-normal dark:border-zinc-600"
+              className="w-20 bg-transparent font-mono text-base font-bold text-white outline-none"
             />
           </label>
-          <button type="submit" className="rounded border border-zinc-400 px-3 py-2 text-sm">
+          <button type="submit" className="rounded-full bg-fuchsia-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-fuchsia-400">
             보기
           </button>
         </form>

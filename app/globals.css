@@ -17,12 +17,39 @@
 }
 
 body {
-  /* 네온 보라·핑크 빛이 모서리에서 번지는 배경 */
+  /* 어두운 바탕 + 은은한 격자 + 모서리의 보라·핑크 빛 */
   background:
-    radial-gradient(900px 500px at 0% -10%, rgba(168, 85, 247, 0.22), transparent 60%),
-    radial-gradient(800px 500px at 100% 0%, rgba(236, 72, 153, 0.16), transparent 60%),
+    radial-gradient(900px 520px at 0% -10%, rgba(139, 92, 246, 0.28), transparent 60%),
+    radial-gradient(800px 520px at 100% 0%, rgba(255, 46, 147, 0.18), transparent 60%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 44px 44px,
     var(--background);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+}
+
+/* 유리 질감 카드 */
+@utility glass {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 40px -24px rgba(0, 0, 0, 0.8);
+}
+
+/* 보라→핑크 그라데이션 테두리 카드 */
+@utility gradient-border {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#120b22, #120b22) padding-box,
+    linear-gradient(135deg, #8b5cf6, #ff2e93 70%, #22d3ee) border-box;
+  box-shadow: 0 0 60px -20px rgba(255, 46, 147, 0.45);
+}
+
+/* 네온 그라데이션 글자 */
+@utility neon-text {
+  background: linear-gradient(90deg, #c4b5fd, #f0abfc 45%, #ff7ab8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
