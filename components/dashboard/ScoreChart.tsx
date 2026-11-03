@@ -11,7 +11,7 @@ export type ChartRow = { month: string } & Record<string, number | string | null
 export function ScoreChart({ rows, serviceNames }: { rows: ChartRow[]; serviceNames: string[] }) {
   return (
     <figure className="flex h-full flex-col gap-2">
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-fuchsia-300/70">02 / Trend</p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-fuchsia-300/70">02 / Trajectory</p>
       <figcaption className="text-lg font-bold">월별 지수 그래프</figcaption>
       <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">

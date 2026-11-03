@@ -80,7 +80,15 @@ function SummaryCards({
   return (
     <section aria-label="요약" className="grid gap-4 lg:grid-cols-5">
       <div className="gradient-border relative flex flex-col justify-center overflow-hidden rounded-3xl p-8 lg:col-span-3">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-fuchsia-500/30 blur-3xl" aria-hidden />
+        {/* 장식: 행성과 그 둘레를 도는 위성. 넓은 화면에서만 보인다. */}
+        <div className="pointer-events-none absolute -right-8 top-1/2 hidden h-72 w-72 -translate-y-1/2 xl:block" aria-hidden>
+          <div className="absolute inset-12 rounded-full bg-[radial-gradient(circle_at_32%_30%,#f5d0fe,#a855f7_45%,#2e1065_82%)] shadow-[0_0_70px_rgba(168,85,247,0.55)]" />
+          <div className="absolute inset-4 rounded-full border border-white/15" />
+          <div className="absolute -inset-4 rounded-full border border-dashed border-white/10" />
+          <div className="orbit-spin absolute inset-4 animate-[orbit-spin_24s_linear_infinite]">
+            <span className="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 shadow-[0_0_12px_#67e8f9]" />
+          </div>
+        </div>
         <Eyebrow>Annual index</Eyebrow>
         <p className="mt-1 text-sm font-medium text-zinc-300">{yearScore.year}년 연간 누적 지수</p>
         <p className="neon-text mt-4 font-mono text-6xl font-bold tabular-nums tracking-tighter sm:text-7xl">
@@ -98,7 +106,7 @@ function SummaryCards({
 
       <div className="grid gap-4 lg:col-span-2">
         <div className={cardClass}>
-          <Eyebrow>Month</Eyebrow>
+          <Eyebrow>Current cycle</Eyebrow>
           <p className="mt-1 text-sm font-medium text-zinc-300">{focusLabel} 합계</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <p className="font-mono text-4xl font-bold tabular-nums tracking-tight text-white">{formatScore(focus.total)}</p>
@@ -108,7 +116,7 @@ function SummaryCards({
         </div>
 
         <div className={cardClass}>
-          <Eyebrow>Survey share</Eyebrow>
+          <Eyebrow>Signal source</Eyebrow>
           <div className="mt-1 flex items-end justify-between gap-3">
             <p className="text-sm font-medium text-zinc-300">설문 추정 비중</p>
             <p className="font-mono text-3xl font-bold tabular-nums text-pink-300">{formatPercent(share)}</p>
@@ -129,7 +137,7 @@ function RankingCard({ yearScore }: { yearScore: YearScore }) {
   return (
     <section aria-label="서비스 순위" className={`${cardClass} flex h-full flex-col gap-5`}>
       <div>
-        <Eyebrow>01 / Ranking</Eyebrow>
+        <Eyebrow>01 / Orbit rank</Eyebrow>
         <h2 className="mt-1 text-lg font-bold">서비스 순위</h2>
         <p className="text-xs text-zinc-500">{yearScore.year}년 연간 누적 점수 기준 (점수가 계산된 달의 합)</p>
       </div>
@@ -185,7 +193,7 @@ function MonthlyTable({ focus, focusLabel, previous }: { focus: MonthScore; focu
     <section aria-label="서비스별 월 지수" className={`${cardClass} flex flex-col gap-5`}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <Eyebrow>03 / Monthly</Eyebrow>
+          <Eyebrow>03 / Telemetry</Eyebrow>
           <h2 className="mt-1 text-lg font-bold">서비스별 월 지수</h2>
           <p className="text-xs text-zinc-500">
             {focusLabel === formatMonthLabel(focus.yearMonth) ? focusLabel : `${focusLabel} · ${formatMonthLabel(focus.yearMonth)}`} 기준
@@ -311,7 +319,7 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
   return (
     <section aria-label="설문 정보" className={`${cardClass} flex flex-col gap-4`}>
       <div>
-        <Eyebrow>04 / Survey</Eyebrow>
+        <Eyebrow>04 / Field survey</Eyebrow>
         <h2 className="mt-1 text-lg font-bold">설문 정보</h2>
         <p className="text-xs text-zinc-500">업무절감시간·업무기여도가 어떤 조사에서 나왔는지 보여주는 근거입니다.</p>
       </div>

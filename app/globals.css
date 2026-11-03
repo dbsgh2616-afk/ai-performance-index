@@ -4,8 +4,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #0a0612;
-  --foreground: #ece8f5;
+  --background: #04050f;
+  --foreground: #e8ecfa;
   color-scheme: dark;
 }
 
@@ -17,16 +17,58 @@
 }
 
 body {
-  /* 어두운 바탕 + 은은한 격자 + 모서리의 보라·핑크 빛 */
+  /* 깊은 우주 바탕 + 보라·핑크·청록 성운 */
   background:
-    radial-gradient(900px 520px at 0% -10%, rgba(139, 92, 246, 0.28), transparent 60%),
-    radial-gradient(800px 520px at 100% 0%, rgba(255, 46, 147, 0.18), transparent 60%),
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 44px 44px,
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 44px 44px,
+    radial-gradient(1000px 620px at 5% -8%, rgba(124, 58, 237, 0.32), transparent 62%),
+    radial-gradient(900px 600px at 98% 4%, rgba(236, 72, 153, 0.2), transparent 62%),
+    radial-gradient(1100px 700px at 60% 112%, rgba(34, 211, 238, 0.12), transparent 62%),
     var(--background);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+}
+
+/* 별: 고정된 별 층 + 깜빡이는 별 층 (내용 뒤에 깔린다) */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+body::before {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+    radial-gradient(1px 1px at 130px 90px, #c7d2fe, transparent),
+    radial-gradient(1.5px 1.5px at 210px 170px, #fff, transparent),
+    radial-gradient(1px 1px at 70px 150px, #fbcfe8, transparent),
+    radial-gradient(1px 1px at 270px 40px, #a5f3fc, transparent);
+  background-size: 300px 220px;
+  opacity: 0.7;
+}
+body::after {
+  background-image:
+    radial-gradient(1.5px 1.5px at 90px 60px, #fff, transparent),
+    radial-gradient(2px 2px at 330px 250px, #f0abfc, transparent),
+    radial-gradient(1.5px 1.5px at 190px 310px, #fff, transparent);
+  background-size: 440px 380px;
+  animation: twinkle 5s ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: 0.25; }
+  to { opacity: 0.95; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after { animation: none; opacity: 0.6; }
+}
+
+/* 천천히 도는 궤도 (히어로 카드 장식) */
+@keyframes orbit-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbit-spin { animation: none !important; }
 }
 
 /* 유리 질감 카드 */
@@ -41,7 +83,7 @@ body {
 @utility gradient-border {
   border: 1px solid transparent;
   background:
-    linear-gradient(#120b22, #120b22) padding-box,
+    linear-gradient(#0a0b1f, #0a0b1f) padding-box,
     linear-gradient(135deg, #8b5cf6, #ff2e93 70%, #22d3ee) border-box;
   box-shadow: 0 0 60px -20px rgba(255, 46, 147, 0.45);
 }
