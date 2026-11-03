@@ -150,6 +150,34 @@ describe("대시보드 화면", () => {
     expect(html).toContain("– 0%");
   });
 
+  it("서비스 상태등: 상태 정보를 주면 서비스별 상태와 완료 개수를 보여준다", () => {
+    const scoreData = data(["2026-10"]);
+    const html = renderToStaticMarkup(
+      <DashboardView
+        yearScore={calculateYear(scoreData)}
+        settings={scoreData.settings}
+        serviceNames={SERVICE_NAMES}
+        focusMonth="2026-10"
+        focusLabel="이번 달"
+        isAdmin
+        statuses={[
+          { serviceId: 1, serviceName: "KOBI", kind: "done", reasons: [] },
+          { serviceId: 2, serviceName: "KOBI+", kind: "pending", reasons: ["호출횟수 미입력"] },
+          { serviceId: 3, serviceName: "국유변화탐지", kind: "unverified", reasons: ["설문 출처 없음"] },
+        ]}
+      />,
+    );
+    expect(html).toContain("서비스 상태등");
+    expect(html).toContain("입력 대기");
+    expect(html).toContain("근거 미확인");
+    expect(html).toContain("호출횟수 미입력");
+    expect(html).toContain("/ 3 입력 완료");
+  });
+
+  it("상태 정보가 없으면 상태등 카드를 그리지 않는다", () => {
+    expect(render(["2026-10"])).not.toContain("서비스 상태등");
+  });
+
   it("전월 입력이 없으면 증감률을 그리지 않는다", () => {
     expect(render(["2026-10"])).not.toContain("전월 대비");
   });

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { changeRate, formatMonthLabel, formatPercent, formatScore, NO_DATA } from "@/lib/format";
+import type { ServiceStatus, ServiceStatusKind } from "@/lib/score/status";
 import { rankServices, type EvidenceGrade, type MonthScore, type ScoreSetting, type YearScore } from "@/lib/score";
 import {
   aggregationLabel,
@@ -22,6 +23,7 @@ type Props = {
   focusLabel: string; // "이번 달" 또는 "12월"
   isAdmin: boolean;
   chart?: ReactNode;
+  statuses?: ServiceStatus[]; // 서비스 상태등. 없으면 카드를 그리지 않는다.
 };
 
 // 유리 질감 카드. 색은 포인트에만 쓴다. (app/globals.css의 glass 유틸리티)
@@ -59,6 +61,47 @@ function Delta({ current, previous }: { current: number | null; previous: number
     >
       {flat ? "–" : up ? "▲" : "▼"} {text}%
     </span>
+  );
+}
+
+const STATUS_STYLE: Record<ServiceStatusKind, { label: string; dot: string; text: string }> = {
+  done: { label: "입력 완료", dot: "bg-cyan-300 shadow-[0_0_10px_#67e8f9]", text: "text-cyan-300" },
+  pending: { label: "입력 대기", dot: "bg-amber-300 shadow-[0_0_10px_#fcd34d] animate-pulse", text: "text-amber-300" },
+  unverified: { label: "근거 미확인", dot: "bg-pink-400 shadow-[0_0_10px_#f472b6]", text: "text-pink-300" },
+};
+
+// 서비스별 상태등: 이번 달 누가 자료를 줬고 누가 아직인지 한눈에 보여 준다.
+function StatusStrip({ statuses, focusLabel }: { statuses: ServiceStatus[]; focusLabel: string }) {
+  const doneCount = statuses.filter((status) => status.kind === "done").length;
+
+  return (
+    <section aria-label="서비스 상태등" className={`${cardClass} flex flex-col gap-4`}>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <Eyebrow>Signal lights</Eyebrow>
+          <h2 className="mt-1 text-lg font-bold">서비스 상태등</h2>
+          <p className="text-xs text-zinc-500">{focusLabel} 기준 입력 상황입니다.</p>
+        </div>
+        <p className="font-mono text-sm text-zinc-300">
+          <span className="text-2xl font-bold text-white">{doneCount}</span> / {statuses.length} 입력 완료
+        </p>
+      </div>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {statuses.map((status) => {
+          const style = STATUS_STYLE[status.kind];
+          return (
+            <li key={status.serviceId} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${style.dot}`} aria-hidden />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{status.serviceName}</p>
+                <p className={`text-xs font-medium ${style.text}`}>{style.label}</p>
+                {status.reasons.length > 0 && <p className="mt-0.5 text-[11px] text-zinc-500">{status.reasons.join(" · ")}</p>}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -345,7 +388,7 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
   );
 }
 
-export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart }: Props) {
+export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart, statuses }: Props) {
   const found = yearScore.months.findIndex((month) => month.yearMonth === focusMonth);
   const focusIndex = found === -1 ? 11 : found;
   const focus = yearScore.months[focusIndex];
@@ -355,6 +398,8 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
   return (
     <div className="flex flex-col gap-6">
       <SummaryCards yearScore={yearScore} focus={focus} focusLabel={focusLabel} previous={previous} />
+
+      {statuses && <StatusStrip statuses={statuses} focusLabel={focusLabel} />}
 
       {isAdmin && (
         <p className="text-sm">

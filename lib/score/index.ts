@@ -15,6 +15,7 @@ export type ScoreInput = {
   yearMonth: string; // 예: 2026-11
   callCount: number;
   evidenceGrade: EvidenceGrade;
+  source?: string | null; // 출처. 계산에는 쓰지 않고 상태등에서 "근거 미확인"을 가려내는 데 쓴다.
 };
 
 export type ScoreSetting = {

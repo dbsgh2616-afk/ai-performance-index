@@ -10,6 +10,7 @@ import { getDb } from "@/lib/db";
 import { formatMonthLabel } from "@/lib/format";
 import { calculateYear } from "@/lib/score";
 import { loadScoreData } from "@/lib/score/load";
+import { serviceStatuses } from "@/lib/score/status";
 
 export default function DashboardPage({ searchParams }: PageProps<"/">) {
   return (
@@ -33,6 +34,9 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
   // 올해는 이번 달, 다른 해는 12월을 카드에 보여준다.
   const focusMonth = year === nowYear ? currentYearMonth() : `${year}-12`;
   const focusLabel = year === nowYear ? "이번 달" : formatMonthLabel(focusMonth);
+
+  const focusScore = yearScore.months.find((month) => month.yearMonth === focusMonth) ?? yearScore.months[11];
+  const statuses = serviceStatuses(data, focusScore);
 
   const gaugeMonths: GaugeMonth[] = yearScore.months.map((month) => ({
     label: formatMonthLabel(month.yearMonth),
@@ -74,6 +78,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
         focusLabel={focusLabel}
         isAdmin={user.role === "admin"}
         chart={<ScoreChart months={gaugeMonths} />}
+        statuses={statuses}
       />
     </div>
   );

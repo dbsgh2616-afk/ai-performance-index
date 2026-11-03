@@ -25,6 +25,7 @@ export async function loadScoreData(db: AppDb, year: number): Promise<ScoreData>
       yearMonth: row.yearMonth,
       callCount: row.callCount,
       evidenceGrade: row.evidenceGrade,
+      source: row.source,
     })),
     settings: settingRows.map((row) => ({
       serviceId: row.serviceId,
