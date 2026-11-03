@@ -7,7 +7,7 @@ import { InfraCockpit } from "./InfraCockpit";
 
 import { changeRate, formatPercent, formatScore, NO_DATA } from "@/lib/format";
 import type { InfraSnapshot } from "@/lib/infra";
-import type { RoiResult } from "@/lib/roi";
+import type { CostBreakdown, RoiResult } from "@/lib/roi";
 import { spaceEvents, type SpaceEvent, type SpaceEventKind } from "@/lib/score/events";
 import type { ServiceStatus, ServiceStatusKind } from "@/lib/score/status";
 import { rankServices, type EvidenceGrade, type MonthScore, type ScoreSetting, type YearScore } from "@/lib/score";
@@ -29,7 +29,8 @@ type Props = {
   isAdmin: boolean;
   chart?: ReactNode;
   statuses?: ServiceStatus[]; // 서비스 상태등. 없으면 카드를 그리지 않는다.
-  gpuCount?: number; // GPU 수량. 계기판의 GPU 다이얼 이름 옆에 보여 준다.
+  costs?: CostBreakdown | null; // 계기판의 GPU 도입비용·갯수·월 총비용에 쓰는 비용 내역
+  tokenSeries?: number[]; // 1월부터 선택한 달까지 월별 토큰 사용료(원)
   roi?: RoiResult | null; // 추정 ROI. 계기판 가운데에 보여 준다.
   infra?: InfraSnapshot | null; // AI 인프라 계기판. undefined면 카드를 그리지 않고, null이면 "데이터 없음"으로 그린다.
 };
@@ -449,7 +450,7 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
   );
 }
 
-export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart, statuses, infra, roi = null, gpuCount }: Props) {
+export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart, statuses, infra, roi = null, costs = null, tokenSeries }: Props) {
   const found = yearScore.months.findIndex((month) => month.yearMonth === focusMonth);
   const focusIndex = found === -1 ? 11 : found;
   const focus = yearScore.months[focusIndex];
@@ -496,7 +497,7 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
       <SurveyTable settings={settings} serviceNames={serviceNames} />
 
       {/* 화면 하단에 고정되는 AI 인프라 계기판 */}
-      {infra !== undefined && <InfraCockpit snapshot={infra} yearMonth={focus.yearMonth} isAdmin={isAdmin} roi={roi} gpuCount={gpuCount} />}
+      {infra !== undefined && <InfraCockpit snapshot={infra} yearMonth={focus.yearMonth} isAdmin={isAdmin} roi={roi} costs={costs} tokenSeries={tokenSeries} />}
     </div>
   );
 }

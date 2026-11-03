@@ -1,6 +1,6 @@
 // 추정 ROI — AI 서비스가 아낀 업무 시간을 돈으로 바꾼 효과와, 인프라에 든 비용(도입비를 내용연수로 나눈 월 상각비 + 월 운영비)을 견준다.
 //   효과(원)  = Σ 호출횟수 × 건당 업무절감시간(분) × 업무기여도(%) ÷ 60  ×  시간당 인건비 단가
-//   비용(원)  = (도입비용 합계 ÷ (내용연수 × 12) + 연간 운영비 ÷ 12) × 비용을 센 개월 수
+//   비용(원)  = (도입비용 합계 ÷ (내용연수 × 12) + 연간 운영비 ÷ 12) × 비용을 센 개월 수 + 그 달들의 토큰 사용료 합계
 //   ROI(%)    = (효과 − 비용) ÷ 비용 × 100
 // 업무절감시간·업무기여도가 설문 추정값이므로 이 ROI도 "추정"이다. 보정계수는 관리용 조정값이라 효과에 넣지 않는다.
 // 화면과 DB를 모르는 계산(computeRoi)과, DB에 입력값을 저장하는 부분이 한 파일에 있다.
@@ -66,7 +66,8 @@ export type RoiResult = {
   hours: number; // 아낀 업무 시간
   benefit: number; // 효과(원)
   cost: number; // 비용(원)
-  monthlyCost: number; // 월 비용(원)
+  monthlyCost: number; // 월 고정비(원): 도입비 상각 + 운영비. 토큰 사용료는 달마다 달라서 따로 더한다.
+  tokenCost: number; // 센 달들의 토큰 사용료 합계(원)
   roiPct: number; // 추정 ROI(%)
 };
 
@@ -74,7 +75,12 @@ const halfOfMonth = (yearMonth: string) => (Number(yearMonth.slice(5, 7)) <= 6 ?
 
 // 올해 1월부터 focusMonth까지, 호출횟수가 입력된 달을 기준으로 계산한다.
 // 입력값이 모자라거나 비용이 0이면 계산하지 못하므로 null(데이터 없음)이다.
-export function computeRoi(data: ScoreData, values: Partial<RoiValues> | null, focusMonth: string): RoiResult | null {
+export function computeRoi(
+  data: ScoreData,
+  values: Partial<RoiValues> | null,
+  focusMonth: string,
+  tokenCosts: Record<string, number> = {},
+): RoiResult | null {
   if (!values || REQUIRED_KEYS.some((key) => values[key as keyof RoiValues] === undefined)) return null;
   const v = values as RoiValues;
   if (v.life_years <= 0) return null;
@@ -95,8 +101,27 @@ export function computeRoi(data: ScoreData, values: Partial<RoiValues> | null, f
   }
 
   const benefit = hours * v.hourly_rate;
-  const cost = monthlyCost * months;
-  return { months, hours, benefit, cost, monthlyCost, roiPct: ((benefit - cost) / cost) * 100 };
+  const monthSet = [...new Set(counted.map((input) => input.yearMonth))];
+  const tokenCost = monthSet.reduce((sum, month) => sum + (tokenCosts[month] ?? 0), 0);
+  const cost = monthlyCost * months + tokenCost;
+  return { months, hours, benefit, cost, monthlyCost, tokenCost, roiPct: ((benefit - cost) / cost) * 100 };
+}
+
+// 계기판에 보여 줄 비용 내역. 필수 항목이 모자라면 null.
+export type CostBreakdown = {
+  gpuCapex: number; // GPU 도입비용(원)
+  gpuCount?: number; // GPU 수량(대)
+  capexTotal: number; // 도입비용 합계(원)
+  amortMonthly: number; // 월 상각비(원)
+  opexMonthly: number; // 월 운영비(원)
+};
+
+export function costBreakdown(values: Partial<RoiValues> | null): CostBreakdown | null {
+  if (!values || REQUIRED_KEYS.some((key) => values[key as keyof RoiValues] === undefined)) return null;
+  const v = values as RoiValues;
+  if (v.life_years <= 0) return null;
+  const capexTotal = v.capex_gpu + v.capex_storage + v.capex_network + v.capex_license + v.capex_build;
+  return { gpuCapex: v.capex_gpu, gpuCount: v.gpu_count, capexTotal, amortMonthly: capexTotal / (v.life_years * 12), opexMonthly: v.opex_year / 12 };
 }
 
 // ── 입력·저장 ────────────────────────────────────────────────

@@ -21,6 +21,7 @@ export const FIELD_LABELS: Record<string, string> = {
   memory_usage_pct: "메모리 사용률(%)",
   storage_usage_pct: "스토리지 사용률(%)",
   uptime_pct: "서비스 가동률(%)",
+  token_cost_won: "토큰 사용료(원)",
   value: "값",
 };
 

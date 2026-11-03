@@ -6,7 +6,8 @@ import { changeLogs } from "../lib/db/schema";
 import { seedBase } from "../lib/db/seed";
 import { DEV_ROI, seedDev } from "../lib/db/seed-dev";
 import type { AppDb } from "../lib/db/types";
-import { computeRoi, formatWon, loadRoiInputs, parseRoiForm, saveRoiInputs, type RoiValues } from "../lib/roi";
+import { loadTokenCosts } from "../lib/infra";
+import { computeRoi, costBreakdown, formatWon, loadRoiInputs, parseRoiForm, saveRoiInputs, type RoiValues } from "../lib/roi";
 import type { ScoreData } from "../lib/score";
 import { loadScoreData } from "../lib/score/load";
 import { createTestDb } from "./helpers/db";
@@ -73,6 +74,21 @@ describe("ROI 계산", () => {
     expect(roi.cost).toBeCloseTo(1_200_000);
     // 달마다 효과와 비용이 같은 비율로 늘어 ROI는 변하지 않는다
     expect(roi.roiPct).toBeCloseTo(computeRoi(DATA, VALUES, "2026-01")!.roiPct);
+  });
+
+  it("토큰 사용료는 센 달(입력이 있는 달)만 비용에 더한다", () => {
+    const roi = computeRoi(DATA, VALUES, "2026-02", { "2026-01": 100_000, "2026-02": 200_000, "2026-05": 999_999 })!;
+    expect(roi.tokenCost).toBe(300_000); // 5월은 아직 센 달이 아니다
+    expect(roi.cost).toBeCloseTo(1_200_000 + 300_000);
+    expect(roi.roiPct).toBeCloseTo(((5_000_000 - 1_500_000) / 1_500_000) * 100);
+    // 토큰 사용료를 안 주면 0원으로 본다
+    expect(computeRoi(DATA, VALUES, "2026-02")!.tokenCost).toBe(0);
+  });
+
+  it("계기판용 비용 내역: 도입비 합계, 월 상각비, 월 운영비, GPU 수량", () => {
+    expect(costBreakdown({ ...VALUES, gpu_count: 8 })).toEqual({ gpuCapex: 3_000_000, gpuCount: 8, capexTotal: 6_000_000, amortMonthly: 500_000, opexMonthly: 100_000 });
+    expect(costBreakdown({ ...VALUES })?.gpuCount).toBeUndefined();
+    expect(costBreakdown(null)).toBeNull();
   });
 
   it("효과가 비용보다 작으면 ROI는 음수", () => {
@@ -146,10 +162,12 @@ describe("시연 데이터", () => {
       await seedBase(demo.db, { loginId: "admin01", password: "Passw0rd1" });
       await seedDev(demo.db);
       expect(await loadRoiInputs(demo.db)).toEqual(DEV_ROI);
-      const roi = computeRoi(await loadScoreData(demo.db, 2026), await loadRoiInputs(demo.db), "2026-11")!;
+      const tokenCosts = await loadTokenCosts(demo.db, 2026);
+      const roi = computeRoi(await loadScoreData(demo.db, 2026), await loadRoiInputs(demo.db), "2026-11", tokenCosts)!;
       expect(roi.months).toBe(11);
+      expect(roi.tokenCost).toBe(16_500_000); // 100만원부터 매달 10만원씩 늘어 11개월 합계
       expect(roi.roiPct).toBeGreaterThan(0);
-      expect(roi.roiPct).toBeLessThan(60); // 시연 값이라도 너무 부풀려지지 않게
+      expect(roi.roiPct).toBeLessThan(40); // 시연 값이라도 너무 부풀려지지 않게
     } finally {
       await demo.close();
     }

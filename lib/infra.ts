@@ -1,7 +1,7 @@
 // AI 인프라 계기판 — 월별 지표(GPU·메모리·스토리지 사용률, 가동률)의 입력·저장·읽기.
 // 지수 계산에는 쓰지 않는다. 서버에서 자동으로 읽지 않고 관리자가 월 1회 직접 입력한다. (파일럿 단계의 값은 가상일 수 있다)
 // 저장과 변경 이력 기록은 한 트랜잭션에서 처리한다.
-import { eq } from "drizzle-orm";
+import { eq, like } from "drizzle-orm";
 import { z } from "zod";
 
 import { recordChanges } from "./changelog";
@@ -14,7 +14,7 @@ export type InfraKey = "gpu" | "memory" | "storage" | "uptime";
 
 export type InfraValues = Record<InfraKey, number>;
 
-export type InfraFormData = { yearMonth: string; values: InfraValues; source: string | null };
+export type InfraFormData = { yearMonth: string; values: InfraValues; tokenCost: number; source: string | null };
 
 // 계기판 한 칸의 정의. kind가 "usage"면 낮을수록 좋고, "uptime"이면 높을수록 좋다.
 export const INFRA_GAUGES: { key: InfraKey; label: string; column: string; kind: "usage" | "uptime" }[] = [
@@ -50,17 +50,20 @@ export function parseInfraForm(formData: FormData): ParseResult<InfraFormData | 
   if (!YEAR_MONTH_PATTERN.test(yearMonth)) return { ok: false, error: "월 형식이 맞지 않습니다. 예: 2026-11" };
 
   const raws = INFRA_GAUGES.map((gauge) => ({ gauge, raw: field(formData, gauge.key) }));
-  if (raws.every(({ raw }) => raw === "")) return { ok: true, data: null };
+  const tokenRaw = field(formData, "token_cost").replace(/,/g, "");
+  if (raws.every(({ raw }) => raw === "") && tokenRaw === "") return { ok: true, data: null };
 
   const values = {} as InfraValues;
   for (const { gauge, raw } of raws) {
-    if (raw === "") return { ok: false, error: `${gauge.label}을(를) 입력하세요. (4개 값을 모두 입력해야 저장됩니다)` };
+    if (raw === "") return { ok: false, error: `${gauge.label}을(를) 입력하세요. (모든 값을 입력해야 저장됩니다)` };
     const parsed = percentSchema(gauge.label).safeParse(raw);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
     values[gauge.key] = parsed.data;
   }
+  if (tokenRaw === "") return { ok: false, error: "토큰 사용료를 입력하세요. (모든 값을 입력해야 저장됩니다)" };
+  if (!/^\d{1,13}$/.test(tokenRaw)) return { ok: false, error: "토큰 사용료는 0 이상의 정수(원)로 입력하세요." };
   const source = field(formData, "source");
-  return { ok: true, data: { yearMonth, values, source: source === "" ? null : source } };
+  return { ok: true, data: { yearMonth, values, tokenCost: Number(tokenRaw), source: source === "" ? null : source } };
 }
 
 export async function saveInfraMetrics(db: AppDb, data: InfraFormData, actor: Actor): Promise<{ changes: number }> {
@@ -70,6 +73,7 @@ export async function saveInfraMetrics(db: AppDb, data: InfraFormData, actor: Ac
       memory_usage_pct: data.values.memory,
       storage_usage_pct: data.values.storage,
       uptime_pct: data.values.uptime,
+      token_cost_won: data.tokenCost,
       source: data.source,
     };
     const [existing] = await tx.select().from(infraMetrics).where(eq(infraMetrics.yearMonth, data.yearMonth)).for("update");
@@ -79,6 +83,7 @@ export async function saveInfraMetrics(db: AppDb, data: InfraFormData, actor: Ac
       memoryUsagePct: data.values.memory,
       storageUsagePct: data.values.storage,
       uptimePct: data.values.uptime,
+      tokenCostWon: data.tokenCost,
       source: data.source,
       enteredById: actor.id,
       enteredByName: actor.name,
@@ -102,6 +107,7 @@ export async function saveInfraMetrics(db: AppDb, data: InfraFormData, actor: Ac
       memory_usage_pct: existing.memoryUsagePct,
       storage_usage_pct: existing.storageUsagePct,
       uptime_pct: existing.uptimePct,
+      token_cost_won: existing.tokenCostWon,
       source: existing.source,
     };
     const unchanged = (Object.keys(after) as (keyof typeof after)[]).every((key) => before[key] === after[key]);
@@ -123,6 +129,7 @@ export async function saveInfraMetrics(db: AppDb, data: InfraFormData, actor: Ac
 export type InfraSnapshot = {
   yearMonth: string;
   values: InfraValues;
+  tokenCost: number; // 그 달의 토큰 사용료(원)
   source: string | null;
   enteredByName: string;
   enteredAt: Date;
@@ -134,8 +141,15 @@ export async function loadInfra(db: AppDb, yearMonth: string): Promise<InfraSnap
   return {
     yearMonth: row.yearMonth,
     values: { gpu: row.gpuUsagePct, memory: row.memoryUsagePct, storage: row.storageUsagePct, uptime: row.uptimePct },
+    tokenCost: row.tokenCostWon,
     source: row.source,
     enteredByName: row.enteredByName,
     enteredAt: row.enteredAt,
   };
+}
+
+// 한 해의 월별 토큰 사용료(원). 키는 "2026-11" 같은 월. 입력이 없는 달은 들어 있지 않다.
+export async function loadTokenCosts(db: AppDb, year: number): Promise<Record<string, number>> {
+  const rows = await db.select({ yearMonth: infraMetrics.yearMonth, tokenCost: infraMetrics.tokenCostWon }).from(infraMetrics).where(like(infraMetrics.yearMonth, `${year}-%`));
+  return Object.fromEntries(rows.map((row) => [row.yearMonth, row.tokenCost]));
 }

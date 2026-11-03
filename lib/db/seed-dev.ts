@@ -48,12 +48,15 @@ export const DEV_ROI = {
   capex_network: 30_000_000,
   capex_license: 30_000_000,
   capex_build: 40_000_000,
-  opex_year: 48_000_000,
+  opex_year: 30_000_000,
   life_years: 5,
   hourly_rate: 60_000,
 };
 
-const DEV_UPTIME =[99.92, 99.88, 99.95, 99.81, 99.9, 99.7, 99.93, 99.85, 99.91, 99.78, 99.62];
+// 토큰 사용료(원): 1월 100만원에서 매달 10만원씩 늘어 11월 200만원. 11개월 합계 1,650만원.
+export const devTokenCost = (offset: number) => 1_000_000 + 100_000 * offset;
+
+const DEV_UPTIME = [99.92, 99.88, 99.95, 99.81, 99.9, 99.7, 99.93, 99.85, 99.91, 99.78, 99.62];
 const round1 = (value: number) => Math.round(value * 10) / 10;
 
 export type DevSeedResult = {
@@ -125,6 +128,7 @@ export async function seedDev(db: AppDb): Promise<DevSeedResult> {
       memoryUsagePct: round1(56 + 1.2 * offset),
       storageUsagePct: round1(34 + 4.4 * offset),
       uptimePct: DEV_UPTIME[offset],
+      tokenCostWon: devTokenCost(offset),
       source: DEV_SOURCE,
       enteredById: admin.id,
       enteredByName: admin.name,
@@ -132,7 +136,7 @@ export async function seedDev(db: AppDb): Promise<DevSeedResult> {
   });
   await db.insert(infraMetrics).values(infraRows).onConflictDoNothing();
 
-  // ROI 시연용 비용·단가(임의 값). 도입비 합계 2.4억원 ÷ 5년 + 연 운영비 4,800만원 → 월 비용 약 800만원
+  // ROI 시연용 비용·단가(임의 값). 월 고정비: 도입비 2.4억원 ÷ 5년 = 400만원 + 연 운영비 3,000만원 ÷ 12 = 250만원. 여기에 달마다 토큰 사용료가 더해진다.
   const roiRows = Object.entries(DEV_ROI).map(([key, value]) => ({ key, value, enteredById: admin.id, enteredByName: admin.name }));
   await db.insert(roiInputs).values(roiRows).onConflictDoNothing();
 

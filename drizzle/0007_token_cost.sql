@@ -1,0 +1,1 @@
+ALTER TABLE "infra_metrics" ADD COLUMN "token_cost_won" numeric(16, 2) DEFAULT 0 NOT NULL;

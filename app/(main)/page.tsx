@@ -8,8 +8,8 @@ import { requireUser } from "@/lib/auth/guard";
 import { currentYear, currentYearMonth } from "@/lib/date";
 import { getDb } from "@/lib/db";
 import { formatMonthLabel } from "@/lib/format";
-import { loadInfra } from "@/lib/infra";
-import { computeRoi, loadRoiInputs } from "@/lib/roi";
+import { loadInfra, loadTokenCosts } from "@/lib/infra";
+import { computeRoi, costBreakdown, loadRoiInputs } from "@/lib/roi";
 import { calculateYear } from "@/lib/score";
 import { loadScoreData } from "@/lib/score/load";
 import { serviceStatuses } from "@/lib/score/status";
@@ -41,7 +41,11 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
   const statuses = serviceStatuses(data, focusScore);
   const infra = await loadInfra(getDb(), focusScore.yearMonth);
   const roiValues = await loadRoiInputs(getDb());
-  const roi = computeRoi(data, roiValues, focusScore.yearMonth);
+  const tokenCosts = await loadTokenCosts(getDb(), year);
+  const roi = computeRoi(data, roiValues, focusScore.yearMonth, tokenCosts);
+  const costs = costBreakdown(roiValues);
+  // 토큰 사용료 월별 추이: 1월부터 선택한 달까지
+  const tokenSeries = yearScore.months.filter((month) => month.yearMonth <= focusScore.yearMonth).map((month) => tokenCosts[month.yearMonth] ?? 0);
 
   const gaugeMonths: GaugeMonth[] = yearScore.months.map((month) => ({
     label: formatMonthLabel(month.yearMonth),
@@ -85,7 +89,8 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
         statuses={statuses}
         infra={infra}
         roi={roi}
-        gpuCount={roiValues?.gpu_count}
+        costs={costs}
+        tokenSeries={tokenSeries}
       />
     </div>
   );

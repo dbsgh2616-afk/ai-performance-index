@@ -115,6 +115,8 @@ export const infraMetrics = pgTable(
     memoryUsagePct: numeric("memory_usage_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
     storageUsagePct: numeric("storage_usage_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
     uptimePct: numeric("uptime_pct", { precision: 5, scale: 2, mode: "number" }).notNull(),
+    // 그 달에 낸 토큰(생성형 AI API) 사용료(원). 대시보드 계기판과 추정 ROI의 비용에 들어간다.
+    tokenCostWon: numeric("token_cost_won", { precision: 16, scale: 2, mode: "number" }).notNull().default(0),
     source: text("source"),
     enteredById: integer("entered_by_id").notNull(),
     enteredByName: text("entered_by_name").notNull(),

@@ -1,56 +1,34 @@
 // AI 인프라 계기판 — 화면 하단에 붙어 스크롤을 따라다니는 1인칭 우주선 조종석.
-// 높이를 낮추고 3D로 기울였다: 계기판 윗면이 앞으로 눕고(원근), 다이얼과 가운데 ROI 패널이 판 위로 떠 있다(깊이).
-// 가운데는 추정 ROI, 양옆 날개에 다이얼 2개씩(GPU·메모리 / 스토리지·가동률). 바깥 다이얼은 안쪽으로 꺾여 있다.
-// 값은 관리자가 월 1회 직접 입력한 것이며 지수 계산에는 쓰이지 않는다. 접기/펴기는 <details>라서 자바스크립트가 필요 없다.
+// 가운데는 추정 ROI, 양옆 날개에 비용 계기 4개: GPU 도입비용 · GPU 갯수 · 토큰 사용료 · 월 총비용.
+// 계기판 윗면이 앞으로 눕고(원근), 계기와 ROI 패널이 판 위로 떠 있다(깊이). 바깥 계기는 안쪽으로 꺾여 있다.
+// 윗줄의 경고등은 그 달 인프라 사용률(GPU·메모리·스토리지)과 가동률로 정한다. 값은 모두 관리자가 직접 입력한 것이다.
+// 접기/펴기는 <details>라서 자바스크립트가 필요 없다.
 import Link from "next/link";
+import type { ReactNode } from "react";
 
-import { formatMonthLabel } from "@/lib/format";
+import { changeRate, formatMonthLabel } from "@/lib/format";
 import { dialLevel, INFRA_GAUGES, type DialLevel, type InfraSnapshot } from "@/lib/infra";
-import { formatWon, type RoiResult } from "@/lib/roi";
+import { formatWon, type CostBreakdown, type RoiResult } from "@/lib/roi";
 
-const LEVEL_STYLE: Record<DialLevel, { label: string; text: string; color: string }> = {
-  ok: { label: "정상", text: "text-cyan-300", color: "#22d3ee" },
-  warn: { label: "주의", text: "text-amber-300", color: "#fbbf24" },
-  danger: { label: "위험", text: "text-rose-300", color: "#fb7185" },
+const LEVEL_STYLE: Record<DialLevel, { text: string; color: string }> = {
+  ok: { text: "text-cyan-300", color: "#22d3ee" },
+  warn: { text: "text-amber-300", color: "#fbbf24" },
+  danger: { text: "text-rose-300", color: "#fb7185" },
 };
 
-const CX = 100;
-const CY = 100;
-const R = 78;
+const OVERALL_TEXT: Record<DialLevel, string> = {
+  ok: "ALL SYSTEMS NOMINAL",
+  warn: "MASTER CAUTION",
+  danger: "MASTER WARNING",
+};
 
-// 0~100% 값을 반원(왼쪽 180° → 오른쪽 0°) 위의 각도(라디안)로 바꾼다.
-const angleOf = (percent: number) => Math.PI * (1 - Math.min(100, Math.max(0, percent)) / 100);
-const pointOn = (percent: number, radius: number) => ({
-  x: CX + radius * Math.cos(angleOf(percent)),
-  y: CY - radius * Math.sin(angleOf(percent)),
-});
-// from~to(%) 구간을 반원 호로 그린다.
-function arc(from: number, to: number, radius = R) {
-  const start = pointOn(from, radius);
-  const end = pointOn(to, radius);
-  return `M${start.x.toFixed(2)},${start.y.toFixed(2)} A${radius},${radius} 0 0 1 ${end.x.toFixed(2)},${end.y.toFixed(2)}`;
+// 하나라도 위험이면 위험, 주의가 있으면 주의, 아니면 정상
+function overallLevel(snapshot: InfraSnapshot): DialLevel {
+  const levels = INFRA_GAUGES.map((gauge) => dialLevel(gauge.kind, snapshot.values[gauge.key]));
+  return levels.includes("danger") ? "danger" : levels.includes("warn") ? "warn" : "ok";
 }
 
-// 구간 색: 사용률은 낮을수록 좋고, 가동률은 높을수록 좋다. (dialLevel과 같은 기준선)
-const ZONES: Record<"usage" | "uptime", { from: number; to: number; level: DialLevel }[]> = {
-  usage: [
-    { from: 0, to: 70, level: "ok" },
-    { from: 70, to: 85, level: "warn" },
-    { from: 85, to: 100, level: "danger" },
-  ],
-  uptime: [
-    { from: 0, to: 99, level: "danger" },
-    { from: 99, to: 99.5, level: "warn" },
-    { from: 99.5, to: 100, level: "ok" },
-  ],
-};
-
-// 가동률은 98~100% 구간이 중요하므로 다이얼 눈금을 그 범위로 넓혀 보여준다.
-const UPTIME_MIN = 98;
-const toDial = (kind: "usage" | "uptime", value: number) =>
-  kind === "uptime" ? ((Math.max(UPTIME_MIN, value) - UPTIME_MIN) / (100 - UPTIME_MIN)) * 100 : value;
-
-// 다이얼은 판 위로 살짝 떠 있고(translateZ), 바깥쪽일수록 가운데를 향해 더 꺾인다. 곡선 계기판을 따라 바깥은 조금 아래에 놓인다.
+// 계기는 판 위로 살짝 떠 있고(translateZ), 바깥쪽일수록 가운데를 향해 더 꺾인다. 곡선 계기판을 따라 바깥은 조금 아래에 놓인다.
 const TILT_CLASS = {
   "outer-left": "lg:translate-y-2 lg:[transform:perspective(600px)_translateZ(14px)_rotateY(20deg)]",
   "inner-left": "lg:[transform:perspective(600px)_translateZ(18px)_rotateY(9deg)]",
@@ -60,74 +38,24 @@ const TILT_CLASS = {
 
 type Tilt = keyof typeof TILT_CLASS;
 
-function Dial({ kind, label, value, tilt }: { kind: "usage" | "uptime"; label: string; value: number; tilt: Tilt }) {
-  const level = dialLevel(kind, value);
-  const style = LEVEL_STYLE[level];
-  const dialValue = toDial(kind, value);
-  // 바늘은 위(0°)를 향하게 그려 두고 -90°(왼쪽 끝) ~ +90°(오른쪽 끝)로 돌린다.
-  const needleDeg = (dialValue / 100) * 180 - 90;
+const NO_DATA = "데이터 없음";
+// 작은 글자 칸에는 만원 단위 숫자만 쓴다. 예: 400 (= 400만원)
+const man = (value: number) => Math.round(value / 10_000).toLocaleString("ko-KR");
 
+function Gauge({ label, value, sub, tilt, color, children }: { label: string; value: string; sub?: ReactNode; tilt: Tilt; color: string; children?: ReactNode }) {
   return (
     <li
-      className={`flex min-w-0 flex-col items-center rounded-xl border border-cyan-200/25 border-b-black/60 bg-gradient-to-b from-[#161c3d] to-[#070914] px-1.5 pb-1.5 pt-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_0_16px_rgba(34,211,238,0.1),0_14px_16px_-6px_rgba(0,0,0,0.85)] ${TILT_CLASS[tilt]}`}
+      className={`flex min-w-0 flex-col items-center justify-between gap-1 rounded-xl border border-cyan-200/25 border-b-black/60 bg-gradient-to-b from-[#161c3d] to-[#070914] px-2 pb-2 pt-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_0_16px_rgba(34,211,238,0.1),0_14px_16px_-6px_rgba(0,0,0,0.85)] ${TILT_CLASS[tilt]}`}
     >
-      <svg viewBox="0 0 200 122" className="w-full max-w-[120px]" role="img" aria-label={`${label} ${value}%`}>
-        {/* 바탕 호 + 구간 색 호(현재 구간만 밝게) */}
-        <path d={arc(0, 100)} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="16" strokeLinecap="round" />
-        {ZONES[kind].map((zone) => {
-          const from = kind === "uptime" ? toDial(kind, Math.max(zone.from, UPTIME_MIN)) : zone.from;
-          const to = kind === "uptime" ? toDial(kind, Math.max(zone.to, UPTIME_MIN)) : zone.to;
-          if (to <= from) return null;
-          return (
-            <path
-              key={zone.level}
-              d={arc(from, to)}
-              fill="none"
-              stroke={LEVEL_STYLE[zone.level].color}
-              strokeWidth="10"
-              opacity={zone.level === level ? 1 : 0.28}
-              style={zone.level === level ? { filter: `drop-shadow(0 0 5px ${LEVEL_STYLE[zone.level].color})` } : undefined}
-            />
-          );
-        })}
-        {/* 눈금: 큰 눈금 5개 + 작은 눈금 */}
-        {Array.from({ length: 21 }, (_, i) => i * 5).map((tick) => {
-          const big = tick % 25 === 0;
-          const a = pointOn(tick, R + (big ? 15 : 12));
-          const b = pointOn(tick, R + 7);
-          return <line key={tick} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={big ? "rgba(207,250,254,0.85)" : "rgba(255,255,255,0.3)"} strokeWidth={big ? 2 : 1} />;
-        })}
-        {/* 바늘: 처음에 왼쪽 끝에서 값까지 한 번 훑는다 */}
-        <g className="infra-needle" style={{ ["--needle" as string]: `${needleDeg}deg`, transformOrigin: `${CX}px ${CY}px` }}>
-          <path d={`M${CX - 4},${CY} L${CX},${CY - (R - 8)} L${CX + 4},${CY} Z`} fill="#fff" style={{ filter: `drop-shadow(0 0 5px ${style.color})` }} />
-        </g>
-        <circle cx={CX} cy={CY} r="10" fill="#0b1026" stroke={style.color} strokeWidth="3.5" className={level === "danger" ? "animate-pulse" : undefined} />
-        <circle cx={CX} cy={CY} r="3.5" fill={style.color} />
-        <text x={CX} y={CY - 30} textAnchor="middle" className="fill-white font-mono text-[28px] font-bold">
-          {value.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}
-          <tspan className="fill-zinc-400 text-[14px]">%</tspan>
-        </text>
-      </svg>
-      <p className="-mt-1 max-w-full truncate text-xs font-medium text-zinc-100">{label}</p>
-      <p className={`flex items-center gap-1 font-mono text-xs font-bold ${style.text}`}>
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: style.color, boxShadow: `0 0 6px ${style.color}` }} />
-        {style.label}
+      <p className="max-w-full truncate text-xs font-medium text-zinc-300">{label}</p>
+      <p className="max-w-full truncate font-mono text-2xl font-extrabold leading-tight tabular-nums" style={{ color, textShadow: `0 0 12px ${color}88` }}>
+        {value}
       </p>
+      <div className="flex h-5 w-full items-end justify-center">{children}</div>
+      <p className="max-w-full break-keep text-center text-xs leading-tight text-zinc-300">{sub}</p>
     </li>
   );
 }
-
-// 계기판 전체 상태: 하나라도 위험이면 위험, 주의가 있으면 주의, 아니면 정상
-function overallLevel(snapshot: InfraSnapshot): DialLevel {
-  const levels = INFRA_GAUGES.map((gauge) => dialLevel(gauge.kind, snapshot.values[gauge.key]));
-  return levels.includes("danger") ? "danger" : levels.includes("warn") ? "warn" : "ok";
-}
-
-const OVERALL_TEXT: Record<DialLevel, string> = {
-  ok: "ALL SYSTEMS NOMINAL",
-  warn: "MASTER CAUTION",
-  danger: "MASTER WARNING",
-};
 
 // 가운데 ROI 패널: 이 계기판의 주인공이라 가장 크고 밝게 보여 준다.
 function RoiPanel({ roi }: { roi: RoiResult | null }) {
@@ -145,13 +73,10 @@ function RoiPanel({ roi }: { roi: RoiResult | null }) {
     >
       <p className="text-sm font-bold tracking-wide text-zinc-100">추정 ROI</p>
       {roi === null ? (
-        <p className="font-mono text-3xl font-extrabold text-zinc-300">데이터 없음</p>
+        <p className="font-mono text-3xl font-extrabold text-zinc-300">{NO_DATA}</p>
       ) : (
         <>
-          <p
-            className="font-mono text-5xl font-extrabold tabular-nums leading-none"
-            style={{ color, textShadow: `0 0 12px ${color}, 0 0 34px ${color}aa` }}
-          >
+          <p className="font-mono text-5xl font-extrabold tabular-nums leading-none" style={{ color, textShadow: `0 0 12px ${color}, 0 0 34px ${color}aa` }}>
             {positive ? "+" : ""}
             {roi.roiPct.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%
           </p>
@@ -169,21 +94,27 @@ export function InfraCockpit({
   yearMonth,
   isAdmin,
   roi,
-  gpuCount,
+  costs,
+  tokenSeries = [],
 }: {
   snapshot: InfraSnapshot | null;
   yearMonth: string;
   isAdmin: boolean;
   roi: RoiResult | null;
-  gpuCount?: number;
+  costs: CostBreakdown | null;
+  tokenSeries?: number[]; // 1월부터 선택한 달까지 월별 토큰 사용료(원). 마지막이 선택한 달
 }) {
-  const gauge = (key: (typeof INFRA_GAUGES)[number]["key"], tilt: Tilt) => {
-    const item = INFRA_GAUGES.find((entry) => entry.key === key)!;
-    const label = key === "gpu" && gpuCount ? `${item.label} · ${gpuCount.toLocaleString("ko-KR")}대` : item.label;
-    return <Dial key={key} kind={item.kind} label={label} value={snapshot!.values[key]} tilt={tilt} />;
-  };
   const overall = snapshot ? overallLevel(snapshot) : null;
   const overallStyle = overall ? LEVEL_STYLE[overall] : null;
+
+  // 토큰 사용료: 이번 달 값과 전월 대비
+  const token = snapshot ? snapshot.tokenCost : null;
+  const previousToken = tokenSeries.length >= 2 ? tokenSeries[tokenSeries.length - 2] : null;
+  const tokenChange = token !== null ? changeRate(token, previousToken) : null;
+  const tokenMax = Math.max(1, ...tokenSeries);
+  const monthlyTotal = costs && token !== null ? costs.amortMonthly + costs.opexMonthly + token : null;
+  const gpuShare = costs && costs.capexTotal > 0 ? Math.round((costs.gpuCapex / costs.capexTotal) * 100) : null;
+  const gpuCount = costs?.gpuCount;
 
   return (
     <>
@@ -221,18 +152,86 @@ export function InfraCockpit({
               <span className="cockpit-scan pointer-events-none absolute inset-0 opacity-30" aria-hidden />
               <span className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.06] to-transparent" aria-hidden />
 
-              <div className="relative px-3 pb-2.5 pt-0.5 sm:px-6 lg:px-[3vw]">
-                {snapshot === null ? (
-                  <p className="py-3 text-center text-sm text-zinc-300">데이터 없음</p>
-                ) : (
-                  <ul className="cockpit-3d-row grid grid-cols-2 items-end gap-2 lg:grid-cols-[1fr_1fr_minmax(250px,1.5fr)_1fr_1fr] lg:gap-3">
-                    {gauge("gpu", "outer-left")}
-                    {gauge("memory", "inner-left")}
-                    <RoiPanel roi={roi} />
-                    {gauge("storage", "inner-right")}
-                    {gauge("uptime", "outer-right")}
-                  </ul>
-                )}
+              <div className="relative px-3 pb-4 pt-0.5 sm:px-6 lg:px-[3vw]">
+                <ul className="cockpit-3d-row grid grid-cols-2 items-stretch gap-2 lg:grid-cols-[1fr_1fr_minmax(250px,1.5fr)_1fr_1fr] lg:gap-3">
+                  {/* 1. GPU 도입비용: 도입비 합계에서 차지하는 비중을 막대로 */}
+                  <Gauge
+                    label="GPU 도입비용"
+                    value={costs ? formatWon(costs.gpuCapex) : NO_DATA}
+                    sub={costs && gpuShare !== null ? `도입비 합계의 ${gpuShare}%` : undefined}
+                    tilt="outer-left"
+                    color="#22d3ee"
+                  >
+                    {gpuShare !== null && (
+                      <span className="block h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden>
+                        <span className="block h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-300" style={{ width: `${gpuShare}%` }} />
+                      </span>
+                    )}
+                  </Gauge>
+
+                  {/* 2. GPU 갯수: 칩 모양 칸으로 */}
+                  <Gauge
+                    label="GPU 갯수"
+                    value={gpuCount ? `${gpuCount.toLocaleString("ko-KR")}대` : NO_DATA}
+                    sub={costs && gpuCount ? `대당 ${formatWon(costs.gpuCapex / gpuCount)}` : undefined}
+                    tilt="inner-left"
+                    color="#a78bfa"
+                  >
+                    {gpuCount ? (
+                      <span className="flex flex-wrap items-end justify-center gap-0.5" aria-hidden>
+                        {Array.from({ length: Math.min(gpuCount, 24) }, (_, i) => (
+                          <span key={i} className="h-2 w-2 rounded-[2px] bg-violet-300/80 shadow-[0_0_5px_#a78bfa]" />
+                        ))}
+                      </span>
+                    ) : null}
+                  </Gauge>
+
+                  <RoiPanel roi={roi} />
+
+                  {/* 4. 토큰 사용료: 이번 달 금액, 전월 대비, 월별 막대 */}
+                  <Gauge
+                    label="토큰 사용료 (이번 달)"
+                    value={token !== null ? formatWon(token) : NO_DATA}
+                    sub={
+                      tokenChange === null ? undefined : (
+                        <span className={tokenChange >= 0 ? "text-pink-300" : "text-cyan-300"}>
+                          전월 대비 {tokenChange >= 0 ? "▲" : "▼"} {Math.abs(tokenChange).toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%
+                        </span>
+                      )
+                    }
+                    tilt="inner-right"
+                    color="#f472b6"
+                  >
+                    {tokenSeries.length > 0 && (
+                      <span className="flex h-5 items-end gap-0.5" aria-hidden>
+                        {tokenSeries.map((amount, i) => (
+                          <span
+                            key={i}
+                            className={`w-1.5 rounded-[1px] ${i === tokenSeries.length - 1 ? "bg-pink-300 shadow-[0_0_6px_#f472b6]" : "bg-pink-400/40"}`}
+                            style={{ height: `${Math.max(12, (amount / tokenMax) * 100)}%` }}
+                          />
+                        ))}
+                      </span>
+                    )}
+                  </Gauge>
+
+                  {/* 5. 월 총비용: 상각 + 운영 + 토큰 */}
+                  <Gauge
+                    label="월 총비용 (이번 달)"
+                    value={monthlyTotal !== null ? formatWon(monthlyTotal) : NO_DATA}
+                    sub={costs && token !== null ? `상각 ${man(costs.amortMonthly)} · 운영 ${man(costs.opexMonthly)} · 토큰 ${man(token)} (만원)` : undefined}
+                    tilt="outer-right"
+                    color="#fbbf24"
+                  >
+                    {costs && token !== null && monthlyTotal ? (
+                      <span className="flex h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden>
+                        <span className="block h-full bg-cyan-300" style={{ width: `${(costs.amortMonthly / monthlyTotal) * 100}%` }} />
+                        <span className="block h-full bg-violet-400" style={{ width: `${(costs.opexMonthly / monthlyTotal) * 100}%` }} />
+                        <span className="block h-full bg-pink-400" style={{ width: `${(token / monthlyTotal) * 100}%` }} />
+                      </span>
+                    ) : null}
+                  </Gauge>
+                </ul>
               </div>
             </details>
           </div>
