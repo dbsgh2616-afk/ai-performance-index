@@ -28,53 +28,7 @@ body {
   font-family: Arial, Helvetica, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
 }
 
-/* 별: 고정된 별 층 + 깜빡이는 별 층 (내용 뒤에 깔린다) */
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-}
-body::before {
-  right: -300px; /* 왼쪽으로 한 칸(300px) 흘러가도 빈 곳이 안 보이게 오른쪽을 넓혀 둔다 */
-  animation: drift-slow 22s linear infinite;
-  background-image:
-    radial-gradient(1px 1px at 20px 30px, #fff, transparent),
-    radial-gradient(1px 1px at 130px 90px, #c7d2fe, transparent),
-    radial-gradient(1.5px 1.5px at 210px 170px, #fff, transparent),
-    radial-gradient(1px 1px at 70px 150px, #fbcfe8, transparent),
-    radial-gradient(1px 1px at 270px 40px, #a5f3fc, transparent);
-  background-size: 300px 220px;
-  opacity: 0.7;
-}
-body::after {
-  background-image:
-    radial-gradient(1.5px 1.5px at 90px 60px, #fff, transparent),
-    radial-gradient(2px 2px at 330px 250px, #f0abfc, transparent),
-    radial-gradient(1.5px 1.5px at 190px 310px, #fff, transparent);
-  background-size: 440px 380px;
-  right: -440px;
-  /* 가까운 별일수록 빨리 지나가서 우주선이 앞으로 날아가는 느낌을 준다 */
-  animation:
-    drift-fast 11s linear infinite,
-    twinkle 5s ease-in-out infinite alternate;
-}
-@keyframes drift-slow {
-  to { transform: translateX(-300px); }
-}
-@keyframes drift-fast {
-  to { transform: translateX(-440px); }
-}
-@keyframes twinkle {
-  from { opacity: 0.25; }
-  to { opacity: 0.95; }
-}
-@media (prefers-reduced-motion: reduce) {
-  body::before { animation: none; }
-  body::after { animation: none; opacity: 0.6; }
-}
+/* 별은 components/Starfield.tsx(캔버스)가 그린다: 가운데에서 바깥으로 날아오는 1인칭 시야 */
 
 /* 천천히 도는 궤도 (히어로 카드 장식) */
 @keyframes orbit-spin {
@@ -150,17 +104,31 @@ body::after {
   will-change: transform;
 }
 /* 인프라 계기판 (components/dashboard/InfraCockpit.tsx) */
-.cockpit-body {
+/* 조종석 계기판 — 위가 불룩한 곡선(대시보드 윗면) + 그라데이션 테두리 */
+.cockpit-dash {
   border: 1px solid transparent;
+  border-radius: 50% 50% 0 0 / 64px 64px 0 0;
   background:
     linear-gradient(180deg, #0d1230, #05060f) padding-box,
     linear-gradient(90deg, #8b5cf6, #67e8f9 50%, #d946ef) border-box;
 }
-.cockpit-shape {
-  /* 위가 좁고 아래가 넓은 조종석 모양 */
-  clip-path: polygon(3.5% 0, 96.5% 0, 100% 100%, 0 100%);
+/* 앞유리 양옆 기둥 */
+.cockpit-pillar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 7vw;
+  background: linear-gradient(180deg, rgba(5, 6, 15, 0.2), #090c20 60%, #05060f);
+  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.35));
 }
-@keyframes needle-in {
+.cockpit-pillar-left {
+  left: 0;
+  clip-path: polygon(0 0, 16% 0, 100% 100%, 0 100%);
+}
+.cockpit-pillar-right {
+  right: 0;
+  clip-path: polygon(84% 0, 100% 0, 100% 100%, 0 100%);
+}@keyframes needle-in {
   from { transform: rotate(-90deg); }
   to { transform: rotate(var(--needle)); }
 }
