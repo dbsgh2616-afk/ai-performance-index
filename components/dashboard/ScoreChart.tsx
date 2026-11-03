@@ -10,8 +10,8 @@ export type GaugeMonth = {
   isFocus: boolean; // 요약 카드에 보이는 달
 };
 
-const WIDTH = 640;
-const HEIGHT = 300;
+const WIDTH = 960;
+const HEIGHT = 380;
 const PAD = { left: 56, right: 28, top: 36, bottom: 40 };
 const PLOT_W = WIDTH - PAD.left - PAD.right;
 const PLOT_H = HEIGHT - PAD.top - PAD.bottom;
@@ -40,7 +40,7 @@ export function ScoreChart({ months }: { months: GaugeMonth[] }) {
     <figure className="flex h-full flex-col gap-3">
       <div>
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-fuchsia-300/70">02 / Flight path</p>
-        <figcaption className="mt-1 text-lg font-bold">월별 AI 지수</figcaption>
+        <figcaption className="mt-1 text-2xl font-bold">월별 AI 지수</figcaption>
         <p className="text-xs text-zinc-500">달마다 서비스 6개의 합계를 이은 항로입니다. 우주선이 이번 달 위치입니다.</p>
       </div>
 

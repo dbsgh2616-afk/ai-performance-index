@@ -474,7 +474,19 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
 
   return (
     <div className="flex flex-col gap-6">
+      {/* 메인: 월별 AI 지수 선그래프. 맨 위에 가장 크게 둔다. */}
+      <div className="gradient-border rounded-3xl p-6 sm:p-8">{chart}</div>
+
       <SummaryCards yearScore={yearScore} focus={focus} focusLabel={focusLabel} previous={previous} />
+
+      <div className="grid gap-4 lg:grid-cols-5">
+        <div className="lg:col-span-2">
+          <RankingCard yearScore={yearScore} />
+        </div>
+        <div className="lg:col-span-3">
+          <MonthlyTable focus={focus} focusLabel={focusLabel} previous={previous} />
+        </div>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-5">
         {statuses && (
@@ -495,16 +507,6 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
         </p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          <RankingCard yearScore={yearScore} />
-        </div>
-        <div className="lg:col-span-3">
-          <div className={`${cardClass} h-full`}>{chart}</div>
-        </div>
-      </div>
-
-      <MonthlyTable focus={focus} focusLabel={focusLabel} previous={previous} />
       <SurveyTable settings={settings} serviceNames={serviceNames} />
     </div>
   );
