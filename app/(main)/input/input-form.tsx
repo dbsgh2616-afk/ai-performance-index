@@ -107,7 +107,7 @@ export function InputForm({ yearMonth, view }: { yearMonth: string; view: Monthl
         <button
           type="submit"
           disabled={pending}
-          className="rounded bg-zinc-900 px-5 py-2 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+          className="rounded bg-zinc-900 px-5 py-2 font-medium text-white disabled:opacity-60 dark:bg-fuchsia-500 dark:text-white dark:shadow-[0_0_16px_rgba(217,70,239,0.55)] dark:hover:bg-fuchsia-400"
         >
           {pending ? "저장 중…" : "저장"}
         </button>

@@ -25,7 +25,7 @@ type Props = {
 };
 
 const cardClass =
-  "rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
+  "rounded-2xl border border-fuchsia-500/20 bg-zinc-900/70 p-5 shadow-[0_0_28px_rgba(168,85,247,0.12)]";
 
 function monthNote(month: MonthScore): string | undefined {
   if (month.total === null) {
@@ -44,9 +44,9 @@ function SummaryCards({ yearScore, focus, focusLabel }: { yearScore: YearScore; 
 
   return (
     <section aria-label="요약" className="grid gap-4 md:grid-cols-3">
-      <div className={`${cardClass} border-l-4 border-l-indigo-500`}>
+      <div className={`${cardClass} border-l-4 border-l-fuchsia-500`}>
         <p className="text-sm font-medium text-zinc-500">{yearScore.year}년 연간 누적 지수</p>
-        <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight">
+        <p className="mt-2 bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-4xl font-bold tabular-nums tracking-tight text-transparent">
           {formatScore(yearScore.countedMonths.length === 0 ? null : yearScore.annualTotal)}
         </p>
         <p className="mt-2 text-xs text-zinc-500">
@@ -54,17 +54,17 @@ function SummaryCards({ yearScore, focus, focusLabel }: { yearScore: YearScore; 
         </p>
       </div>
 
-      <div className={`${cardClass} border-l-4 border-l-sky-500`}>
+      <div className={`${cardClass} border-l-4 border-l-violet-500`}>
         <p className="text-sm font-medium text-zinc-500">{focusLabel} 합계</p>
-        <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight">{formatScore(focus.total)}</p>
+        <p className="mt-2 bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-4xl font-bold tabular-nums tracking-tight text-transparent">{formatScore(focus.total)}</p>
         <p className="mt-2 text-xs text-zinc-500">{monthNote(focus) ?? "서비스 6개 모두 계산됨"}</p>
       </div>
 
-      <div className={`${cardClass} border-l-4 border-l-amber-500`}>
+      <div className={`${cardClass} border-l-4 border-l-pink-500`}>
         <p className="text-sm font-medium text-zinc-500">설문 추정 비중</p>
-        <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight">{formatPercent(share)}</p>
+        <p className="mt-2 bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-4xl font-bold tabular-nums tracking-tight text-transparent">{formatPercent(share)}</p>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800" aria-hidden>
-          <div className="h-full rounded-full bg-amber-500" style={{ width: `${share ?? 0}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-400 shadow-[0_0_10px_rgba(236,72,153,0.7)]" style={{ width: `${share ?? 0}%` }} />
         </div>
         <p className="mt-2 text-xs text-zinc-500">호출횟수(실측), 업무절감시간·업무기여도(설문 추정) 중 설문 값의 비율</p>
       </div>
@@ -73,9 +73,9 @@ function SummaryCards({ yearScore, focus, focusLabel }: { yearScore: YearScore; 
 }
 
 const RANK_STYLES = [
-  "bg-amber-400 text-amber-950",
-  "bg-zinc-300 text-zinc-800",
-  "bg-orange-300 text-orange-950",
+  "bg-fuchsia-400 text-fuchsia-950 shadow-[0_0_12px_rgba(232,121,249,0.8)]",
+  "bg-violet-400 text-violet-950 shadow-[0_0_10px_rgba(167,139,250,0.7)]",
+  "bg-pink-300 text-pink-950 shadow-[0_0_10px_rgba(249,168,212,0.6)]",
 ];
 
 function RankingCard({ yearScore }: { yearScore: YearScore }) {
@@ -104,7 +104,7 @@ function RankingCard({ yearScore }: { yearScore: YearScore }) {
                 <span className="text-sm font-bold tabular-nums">{row.rank === null ? NO_DATA : formatScore(row.annualScore)}</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800" aria-hidden>
-                <div className="h-full rounded-full bg-indigo-500" style={{ width: `${row.barPercent}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.6)]" style={{ width: `${row.barPercent}%` }} />
               </div>
             </div>
           </li>
@@ -116,7 +116,7 @@ function RankingCard({ yearScore }: { yearScore: YearScore }) {
 
 function GradeDot({ grade, label }: { grade: EvidenceGrade | null; label: string }) {
   if (!grade) return null;
-  const color = grade === "실측" ? "bg-emerald-400" : "bg-amber-400";
+  const color = grade === "실측" ? "bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.9)]" : "bg-pink-400 shadow-[0_0_6px_rgba(244,114,182,0.9)]";
   return <span className={`h-1.5 w-1.5 rounded-full ${color}`} title={`${label}: ${grade}`} />;
 }
 
@@ -179,7 +179,7 @@ function MonthlyTable({ yearScore }: { yearScore: YearScore }) {
                       <td
                         key={month.yearMonth}
                         className="rounded-md px-2 py-2 text-center"
-                        style={{ backgroundColor: `rgba(99, 102, 241, ${alpha.toFixed(2)})` }}
+                        style={{ backgroundColor: `rgba(168, 85, 247, ${alpha.toFixed(2)})` }}
                       >
                         <span className="block font-semibold">{formatScore(cell.score)}</span>
                         <span className="mt-1 flex justify-center gap-1">
@@ -238,9 +238,9 @@ function SurveyHalf({ row }: { row: ScoreSetting }) {
   const rate = responseRate(respondents, target);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-violet-500/20 bg-black/30 p-4">
       <div className="flex items-center justify-between">
-        <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-300">
+        <span className="rounded-full bg-pink-500/15 px-2.5 py-0.5 text-xs font-bold text-pink-300">
           {row.half === "H1" ? "상반기" : "하반기"}
         </span>
         <span className="text-xs text-zinc-400">
@@ -254,7 +254,7 @@ function SurveyHalf({ row }: { row: ScoreSetting }) {
           <span className="text-xs text-zinc-400">{formatRespondents(respondents, target)}</span>
         </div>
         <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-800" aria-hidden>
-          <div className="h-full rounded-full bg-amber-400" style={{ width: `${Math.min(100, rate ?? 0)}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-400 shadow-[0_0_8px_rgba(236,72,153,0.6)]" style={{ width: `${Math.min(100, rate ?? 0)}%` }} />
         </div>
         <p className="mt-1 text-[11px] text-zinc-500">
           응답률 · {formatSurveyPeriod(row.survey?.surveyStart ?? null, row.survey?.surveyEnd ?? null)}
@@ -284,7 +284,7 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {serviceIds.map((id) => (
-            <article key={id} className="flex flex-col gap-3 rounded-2xl border border-zinc-800 p-4">
+            <article key={id} className="flex flex-col gap-3 rounded-2xl border border-violet-500/20 p-4">
               <h3 className="font-bold">{serviceNames[id] ?? id}</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 {sorted
@@ -310,7 +310,7 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
 
       {isAdmin && (
         <p className="text-sm">
-          <Link href={`/evidence?year=${yearScore.year}`} className="font-medium text-indigo-600 underline underline-offset-4 dark:text-indigo-400">
+          <Link href={`/evidence?year=${yearScore.year}`} className="font-medium text-fuchsia-400 underline underline-offset-4 hover:text-fuchsia-300">
             증적자료 출력 바로가기 →
           </Link>
         </p>

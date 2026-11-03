@@ -30,8 +30,8 @@ function ServiceCard({ row }: { row: SettingsFormRow }) {
   );
 
   return (
-    <fieldset className="flex flex-col gap-5 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <legend className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+    <fieldset className="flex flex-col gap-5 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-fuchsia-500/20 dark:bg-zinc-900/70">
+      <legend className="rounded-full bg-zinc-900 px-3 py-1 text-sm font-bold text-white dark:bg-fuchsia-500 dark:text-white dark:shadow-[0_0_16px_rgba(217,70,239,0.55)] dark:hover:bg-fuchsia-400">
         {row.serviceName}
       </legend>
 
@@ -50,8 +50,8 @@ function ServiceCard({ row }: { row: SettingsFormRow }) {
         </label>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-lg bg-amber-50 p-4 dark:bg-amber-950/40">
-        <p className="text-sm font-bold text-amber-900 dark:text-amber-200">설문 정보 (이 값이 어떤 조사에서 나왔는지)</p>
+      <div className="flex flex-col gap-4 rounded-lg bg-amber-50 p-4 dark:border dark:border-pink-500/30 dark:bg-pink-950/30">
+        <p className="text-sm font-bold text-amber-900 dark:text-pink-300">설문 정보 (이 값이 어떤 조사에서 나왔는지)</p>
         <div className="grid gap-4 sm:grid-cols-4">
           <label className={labelClass}>
             응답자 수 (명)
@@ -162,7 +162,7 @@ export function SettingsForm({ year, half, rows }: { year: number; half: Half; r
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-zinc-900 px-6 py-2.5 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+          className="rounded-md bg-zinc-900 px-6 py-2.5 font-medium text-white disabled:opacity-60 dark:bg-fuchsia-500 dark:text-white dark:shadow-[0_0_16px_rgba(217,70,239,0.55)] dark:hover:bg-fuchsia-400"
         >
           {pending ? "저장 중…" : "저장"}
         </button>

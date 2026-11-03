@@ -18,14 +18,14 @@ export async function NavBar() {
 
   return (
     <nav className="flex flex-wrap items-center gap-4 text-sm">
-      <Link href="/" className="font-bold">
+      <Link href="/" className="bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text font-bold text-transparent">
         AI 성과지수 관리 서비스
       </Link>
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/">대시보드</Link>
+        <Link href="/" className="hover:text-fuchsia-400">대시보드</Link>
         {isAdmin &&
           ADMIN_LINKS.map((link) => (
-            <Link key={link.href} href={link.href}>
+            <Link key={link.href} href={link.href} className="hover:text-fuchsia-400">
               {link.label}
             </Link>
           ))}
@@ -35,7 +35,7 @@ export async function NavBar() {
           {user.name}({isAdmin ? "관리자" : "조회자"})
         </span>
         <form action={logoutAction}>
-          <button type="submit" className="rounded border border-zinc-400 px-2 py-1">
+          <button type="submit" className="rounded border border-fuchsia-500/50 px-2 py-1 hover:bg-fuchsia-500/10">
             로그아웃
           </button>
         </form>

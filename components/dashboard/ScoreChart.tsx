@@ -3,7 +3,7 @@
 // Design Ref: §4.4 월별 지수 그래프 (1~12월, 서비스 6개 누적 막대) — 어두운 화면에 맞는 색을 쓴다.
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#a855f7", "#ef4444", "#06b6d4"];
+const COLORS = ["#a855f7", "#ec4899", "#22d3ee", "#f0abfc", "#fb7185", "#818cf8"];
 const TEXT = "#a1a1aa";
 
 export type ChartRow = { month: string } & Record<string, number | string | null>;

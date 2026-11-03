@@ -53,7 +53,7 @@ async function EvidenceContent({ searchParams }: { searchParams: PageProps<"/evi
       <div className="flex flex-wrap items-center gap-3">
         <a
           href={`/api/export/pdf?year=${year}`}
-          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-fuchsia-500 dark:text-white dark:shadow-[0_0_16px_rgba(217,70,239,0.55)] dark:hover:bg-fuchsia-400"
         >
           PDF 내려받기
         </a>

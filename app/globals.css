@@ -4,8 +4,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #0b0e14;
-  --foreground: #e4e4e7;
+  --background: #0a0612;
+  --foreground: #ece8f5;
   color-scheme: dark;
 }
 
@@ -17,7 +17,12 @@
 }
 
 body {
-  background: var(--background);
+  /* 네온 보라·핑크 빛이 모서리에서 번지는 배경 */
+  background:
+    radial-gradient(900px 500px at 0% -10%, rgba(168, 85, 247, 0.22), transparent 60%),
+    radial-gradient(800px 500px at 100% 0%, rgba(236, 72, 153, 0.16), transparent 60%),
+    var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
 }
