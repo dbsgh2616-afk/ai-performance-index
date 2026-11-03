@@ -51,5 +51,5 @@ export async function NavBar() {
 }
 
 export function NavBarFallback() {
-  return <div className="h-6 text-sm text-zinc-500">불러오는 중…</div>;
+  return <div className="h-6 text-sm text-zinc-400">불러오는 중…</div>;
 }

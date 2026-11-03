@@ -59,7 +59,7 @@ export function ScoreChart({ months }: { months: GaugeMonth[] }) {
         {ticks.map((tick) => (
           <g key={tick}>
             <line x1={PAD.left} x2={WIDTH - PAD.right} y1={y(tick)} y2={y(tick)} stroke="rgba(255,255,255,0.07)" strokeDasharray={tick === 0 ? undefined : "3 5"} />
-            <text x={PAD.left - 10} y={y(tick) + 3.5} textAnchor="end" className="fill-zinc-500 font-mono text-[10px]">
+            <text x={PAD.left - 10} y={y(tick) + 3.5} textAnchor="end" className="fill-zinc-500 font-mono text-[13px]">
               {compact(Math.round(tick))}
             </text>
           </g>
@@ -72,7 +72,7 @@ export function ScoreChart({ months }: { months: GaugeMonth[] }) {
             x={x(index)}
             y={HEIGHT - 14}
             textAnchor="middle"
-            className={`font-mono text-[10px] ${month.isFocus ? "fill-cyan-300 font-bold" : "fill-zinc-500"}`}
+            className={`font-mono text-[13px] ${month.isFocus ? "fill-cyan-300 font-bold" : "fill-zinc-500"}`}
           >
             {month.label}
           </text>
@@ -114,7 +114,7 @@ export function ScoreChart({ months }: { months: GaugeMonth[] }) {
 
         {/* 이번 달 값 */}
         {ship && focusIndex >= 0 && (
-          <text x={ship.x} y={ship.y - 26} textAnchor="middle" className="fill-white font-mono text-[12px] font-bold">
+          <text x={ship.x} y={ship.y - 26} textAnchor="middle" className="fill-white font-mono text-[14px] font-bold">
             {Math.round(months[focusIndex].total ?? 0).toLocaleString("ko-KR")}
           </text>
         )}

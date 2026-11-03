@@ -16,6 +16,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  /* 기본 글자 크기를 키운다 (rem으로 쓴 글자·간격이 함께 커진다) */
+  font-size: 18px;
+}
+
 body {
   /* 깊은 우주 바탕 + 보라·핑크·청록 성운 */
   background:
@@ -101,6 +106,7 @@ body {
   top: 0;
   bottom: 0;
   width: 7vw;
+  z-index: -5; /* 별 위, 내용 아래에 둔다 */
   background: linear-gradient(180deg, rgba(5, 6, 15, 0.2), #090c20 60%, #05060f);
   filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.35));
 }

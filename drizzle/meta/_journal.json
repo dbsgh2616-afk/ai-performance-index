@@ -36,6 +36,13 @@
       "when": 1793680830697,
       "tag": "0004_infra_cockpit",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793683053250,
+      "tag": "0005_roi_inputs",
+      "breakpoints": true
     }
   ]
 }

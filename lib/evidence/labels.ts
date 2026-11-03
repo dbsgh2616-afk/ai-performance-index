@@ -21,6 +21,7 @@ export const FIELD_LABELS: Record<string, string> = {
   memory_usage_pct: "메모리 사용률(%)",
   storage_usage_pct: "스토리지 사용률(%)",
   uptime_pct: "서비스 가동률(%)",
+  value: "값",
 };
 
 export const TARGET_LABELS: Record<string, string> = {
@@ -29,6 +30,7 @@ export const TARGET_LABELS: Record<string, string> = {
   survey_setting: "설문 설정값",
   account: "계정",
   infra_metric: "AI 인프라 지표",
+  roi_input: "인프라 비용·단가",
 };
 
 export const UNVERIFIED = "근거 미확인";

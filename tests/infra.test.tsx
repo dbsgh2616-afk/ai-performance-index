@@ -130,7 +130,11 @@ describe("계기판 화면", () => {
   };
 
   it("다이얼 4개와 구간 이름이 나온다", () => {
-    const html = renderToStaticMarkup(<InfraCockpit snapshot={snapshot} yearMonth="2026-11" isAdmin />);
+    const roi = { months: 11, hours: 1500, benefit: 99_000_000, cost: 88_000_000, monthlyCost: 8_000_000, roiPct: 12.5 };
+    const html = renderToStaticMarkup(<InfraCockpit snapshot={snapshot} yearMonth="2026-11" isAdmin roi={roi} />);
+    expect(html).toContain("추정 ROI");
+    expect(html).toContain("+12.5%");
+    expect(html).toContain("효과 9,900만원 · 비용 8,800만원");
     for (const label of ["GPU 사용률", "메모리 사용률", "스토리지 사용률", "서비스 가동률"]) expect(html).toContain(label);
     expect(html).toContain("주의"); // GPU 74
     expect(html).toContain("위험"); // 스토리지 90
@@ -139,7 +143,7 @@ describe("계기판 화면", () => {
   });
 
   it("값이 없으면 '데이터 없음', 조회자에게는 입력 링크가 보이지 않는다", () => {
-    const html = renderToStaticMarkup(<InfraCockpit snapshot={null} yearMonth="2026-11" isAdmin={false} />);
+    const html = renderToStaticMarkup(<InfraCockpit snapshot={null} yearMonth="2026-11" isAdmin={false} roi={null} />);
     expect(html).toContain("데이터 없음");
     expect(html).not.toContain("/infra");
   });

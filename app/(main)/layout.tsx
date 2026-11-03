@@ -12,7 +12,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           <NavBar />
         </Suspense>
       </header>
-      <div className="mx-auto w-full max-w-6xl flex-1 p-6">
+      <div className="mx-auto w-full max-w-7xl flex-1 p-6">
         <Suspense fallback={<p className="text-sm text-zinc-500">불러오는 중…</p>}>
           <AuthGate>{children}</AuthGate>
         </Suspense>

@@ -3,7 +3,7 @@
 // 서비스별 규모를 다르게 잡아, 연간 누적 점수 순위가 KOBI+ > KOBI > 국유변화탐지 > 온비드 AI요약 > 성과나침반 > 슈퍼로이어가 되게 했다.
 import { asc, eq } from "drizzle-orm";
 
-import { accounts, infraMetrics, monthlyInputs, services, surveySettings } from "./schema";
+import { accounts, infraMetrics, monthlyInputs, roiInputs, services, surveySettings } from "./schema";
 import type { AppDb } from "./types";
 
 export const DEV_YEAR = 2026;
@@ -41,7 +41,18 @@ export function devCallCount(profile: DevProfile, month: number): number {
 const QUESTION =
   "AI 서비스를 사용한 뒤 업무 1건당 절감된 시간(분)과, 업무 결과에 대한 AI의 기여도(%)를 응답해 주세요.";
 
-const DEV_UPTIME = [99.92, 99.88, 99.95, 99.81, 99.9, 99.7, 99.93, 99.85, 99.91, 99.78, 99.62];
+export const DEV_ROI = {
+  capex_gpu: 100_000_000,
+  capex_storage: 40_000_000,
+  capex_network: 30_000_000,
+  capex_license: 30_000_000,
+  capex_build: 40_000_000,
+  opex_year: 48_000_000,
+  life_years: 5,
+  hourly_rate: 60_000,
+};
+
+const DEV_UPTIME =[99.92, 99.88, 99.95, 99.81, 99.9, 99.7, 99.93, 99.85, 99.91, 99.78, 99.62];
 const round1 = (value: number) => Math.round(value * 10) / 10;
 
 export type DevSeedResult = {
@@ -119,6 +130,10 @@ export async function seedDev(db: AppDb): Promise<DevSeedResult> {
     };
   });
   await db.insert(infraMetrics).values(infraRows).onConflictDoNothing();
+
+  // ROI 시연용 비용·단가(임의 값). 도입비 합계 2.4억원 ÷ 5년 + 연 운영비 4,800만원 → 월 비용 약 800만원
+  const roiRows = Object.entries(DEV_ROI).map(([key, value]) => ({ key, value, enteredById: admin.id, enteredByName: admin.name }));
+  await db.insert(roiInputs).values(roiRows).onConflictDoNothing();
 
   return { monthlyInputCount: inputRows.length, settingCount: settingRows.length, infraCount: infraRows.length };
 }

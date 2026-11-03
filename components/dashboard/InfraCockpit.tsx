@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { formatMonthLabel } from "@/lib/format";
 import { dialLevel, INFRA_GAUGES, type DialLevel, type InfraSnapshot } from "@/lib/infra";
+import { formatWon, type RoiResult } from "@/lib/roi";
 
 const LEVEL_STYLE: Record<DialLevel, { label: string; text: string; color: string }> = {
   ok: { label: "정상", text: "text-cyan-300", color: "#22d3ee" },
@@ -70,7 +71,7 @@ function Dial({ kind, label, value, tilt }: { kind: "usage" | "uptime"; label: s
     <li
       className={`flex min-w-0 flex-col items-center rounded-2xl border border-cyan-300/20 bg-black/55 px-2 pb-2 pt-1 shadow-[inset_0_0_22px_rgba(34,211,238,0.1),0_0_18px_rgba(0,0,0,0.6)] ${TILT_CLASS[tilt]}`}
     >
-      <svg viewBox="0 0 200 122" className="w-full max-w-[200px]" role="img" aria-label={`${label} ${value}%`}>
+      <svg viewBox="0 0 200 122" className="w-full max-w-[150px]" role="img" aria-label={`${label} ${value}%`}>
         {/* 바탕 호 + 구간 색 호(현재 구간만 밝게) */}
         <path d={arc(0, 100)} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="16" strokeLinecap="round" />
         {ZONES[kind].map((zone) => {
@@ -110,7 +111,7 @@ function Dial({ kind, label, value, tilt }: { kind: "usage" | "uptime"; label: s
         </text>
       </svg>
       <p className="-mt-0.5 truncate text-xs font-medium text-zinc-200">{label}</p>
-      <p className={`flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider ${style.text}`}>
+      <p className={`flex items-center gap-1 font-mono text-xs font-bold uppercase tracking-wider ${style.text}`}>
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: style.color, boxShadow: `0 0 6px ${style.color}` }} />
         {style.label}
       </p>
@@ -131,13 +132,32 @@ const OVERALL_TEXT: Record<DialLevel, string> = {
 };
 
 // 가운데 종합 콘솔: 경고등, 월, 항목별 표시등, 장식 스위치
-function Console({ snapshot, yearMonth, isAdmin }: { snapshot: InfraSnapshot; yearMonth: string; isAdmin: boolean }) {
+function Console({ snapshot, yearMonth, isAdmin, roi }: { snapshot: InfraSnapshot; yearMonth: string; isAdmin: boolean; roi: RoiResult | null }) {
   const overall = overallLevel(snapshot);
   const style = LEVEL_STYLE[overall];
+  const roiColor = roi === null ? "#a1a1aa" : roi.roiPct >= 0 ? "#22d3ee" : "#fb7185";
 
   return (
     <li className="order-first col-span-2 flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-fuchsia-400/25 bg-black/60 px-4 py-3 shadow-[inset_0_0_26px_rgba(217,70,239,0.12)] lg:order-none lg:col-span-1">
-      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-fuchsia-300/80">AI infra · {formatMonthLabel(yearMonth)}</p>
+      <p className="font-mono text-xs uppercase tracking-[0.2em] text-fuchsia-300/80">{formatMonthLabel(yearMonth)}</p>
+
+      {/* 가운데: 추정 ROI */}
+      <div className="flex w-full flex-col items-center rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+        <p className="text-xs font-medium text-zinc-300">추정 ROI</p>
+        {roi === null ? (
+          <p className="font-mono text-2xl font-bold text-zinc-300">데이터 없음</p>
+        ) : (
+          <>
+            <p className="font-mono text-4xl font-bold tabular-nums leading-tight" style={{ color: roiColor, textShadow: `0 0 18px ${roiColor}88` }}>
+              {roi.roiPct >= 0 ? "+" : ""}
+              {roi.roiPct.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%
+            </p>
+            <p className="text-xs text-zinc-300">
+              효과 {formatWon(roi.benefit)} · 비용 {formatWon(roi.cost)}
+            </p>
+          </>
+        )}
+      </div>
 
       {/* 종합 경고등 */}
       <div
@@ -148,33 +168,8 @@ function Console({ snapshot, yearMonth, isAdmin }: { snapshot: InfraSnapshot; ye
         {OVERALL_TEXT[overall]}
       </div>
 
-      {/* 항목별 표시등 */}
-      <ul className="grid w-full grid-cols-2 gap-x-3 gap-y-1">
-        {INFRA_GAUGES.map((gauge) => {
-          const level = dialLevel(gauge.kind, snapshot.values[gauge.key]);
-          return (
-            <li key={gauge.key} className="flex items-center gap-1.5 font-mono text-[10px] uppercase text-zinc-300">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: LEVEL_STYLE[level].color, boxShadow: `0 0 6px ${LEVEL_STYLE[level].color}` }} aria-hidden />
-              {gauge.key}
-            </li>
-          );
-        })}
-      </ul>
-
-      {/* 장식: 토글 스위치 줄과 깜빡이는 작은 표시등 */}
-      <div className="flex items-center gap-1.5" aria-hidden>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <span key={i} className="h-3.5 w-1.5 rounded-sm bg-zinc-600">
-            <span className={`block h-1.5 w-1.5 rounded-sm ${i % 2 === 0 ? "bg-cyan-300" : "mt-2 bg-zinc-400"}`} />
-          </span>
-        ))}
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="ml-1 h-1.5 w-1.5 animate-pulse rounded-full bg-fuchsia-400" style={{ animationDelay: `${i * 0.4}s` }} />
-        ))}
-      </div>
-
       {isAdmin && (
-        <Link href={`/infra?month=${yearMonth}`} className="text-[11px] font-medium text-fuchsia-300 underline underline-offset-4 hover:text-fuchsia-200">
+        <Link href={`/infra?month=${yearMonth}`} className="text-xs font-medium text-fuchsia-300 underline underline-offset-4 hover:text-fuchsia-200">
           값 입력하기 →
         </Link>
       )}
@@ -182,25 +177,26 @@ function Console({ snapshot, yearMonth, isAdmin }: { snapshot: InfraSnapshot; ye
   );
 }
 
-export function InfraCockpit({ snapshot, yearMonth, isAdmin }: { snapshot: InfraSnapshot | null; yearMonth: string; isAdmin: boolean }) {
+export function InfraCockpit({ snapshot, yearMonth, isAdmin, roi }: { snapshot: InfraSnapshot | null; yearMonth: string; isAdmin: boolean; roi: RoiResult | null }) {
   const gauge = (key: (typeof INFRA_GAUGES)[number]["key"], tilt: Tilt) => {
     const item = INFRA_GAUGES.find((entry) => entry.key === key)!;
     return <Dial key={key} kind={item.kind} label={item.label} value={snapshot!.values[key]} tilt={tilt} />;
   };
 
   return (
-    <aside aria-label="AI 인프라 계기판" className="pointer-events-none fixed inset-0 z-30">
-      {/* 앞유리 양옆 기둥: 위는 가늘고 아래는 굵게 계기판과 이어진다. 넓은 화면에서만 보인다. */}
+    <>
+      {/* 앞유리 양옆 기둥: 내용 뒤에 깔려 카드가 가려지지 않는다. 넓은 화면에서만 보인다. */}
       <span className="cockpit-pillar cockpit-pillar-left hidden xl:block" aria-hidden />
       <span className="cockpit-pillar cockpit-pillar-right hidden xl:block" aria-hidden />
 
+    <aside aria-label="AI 인프라 계기판" className="pointer-events-none fixed inset-0 z-30">
       <div className="pointer-events-auto absolute inset-x-0 bottom-0 drop-shadow-[0_-10px_40px_rgba(34,211,238,0.3)]">
         <details open className="cockpit-dash group relative overflow-hidden">
-          <summary className="relative z-10 flex cursor-pointer list-none items-center justify-center gap-3 px-6 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-200/80 marker:hidden [&::-webkit-details-marker]:hidden">
+          <summary className="relative z-10 flex cursor-pointer list-none items-center justify-center gap-3 px-6 py-2 font-mono text-xs uppercase tracking-[0.2em] text-cyan-200/80 marker:hidden [&::-webkit-details-marker]:hidden">
             <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300 shadow-[0_0_8px_#67e8f9]" aria-hidden />
             AI 인프라
-            <span className="text-zinc-400 group-open:hidden">▲ 열기</span>
-            <span className="hidden text-zinc-400 group-open:inline">▼ 접기</span>
+            <span className="text-zinc-300 group-open:hidden">▲ 열기</span>
+            <span className="hidden text-zinc-300 group-open:inline">▼ 접기</span>
           </summary>
 
           {/* 위쪽 테두리를 훑는 빛 + 화면 주사선 + 유리 반사 */}
@@ -210,7 +206,7 @@ export function InfraCockpit({ snapshot, yearMonth, isAdmin }: { snapshot: Infra
 
           <div className="relative px-3 pb-4 pt-1 sm:px-6 lg:px-[4vw]">
             {snapshot === null ? (
-              <p className="py-6 text-center text-sm text-zinc-400">
+              <p className="py-6 text-center text-sm text-zinc-300">
                 데이터 없음
                 {isAdmin && (
                   <Link href={`/infra?month=${yearMonth}`} className="ml-2 font-medium text-fuchsia-400 underline underline-offset-4 hover:text-fuchsia-300">
@@ -222,7 +218,7 @@ export function InfraCockpit({ snapshot, yearMonth, isAdmin }: { snapshot: Infra
               <ul className="grid grid-cols-2 items-end gap-2 lg:grid-cols-[1fr_1fr_minmax(230px,1.15fr)_1fr_1fr] lg:gap-3">
                 {gauge("gpu", "outer-left")}
                 {gauge("memory", "inner-left")}
-                <Console snapshot={snapshot} yearMonth={yearMonth} isAdmin={isAdmin} />
+                <Console snapshot={snapshot} yearMonth={yearMonth} isAdmin={isAdmin} roi={roi} />
                 {gauge("storage", "inner-right")}
                 {gauge("uptime", "outer-right")}
               </ul>
@@ -231,5 +227,6 @@ export function InfraCockpit({ snapshot, yearMonth, isAdmin }: { snapshot: Infra
         </details>
       </div>
     </aside>
+    </>
   );
 }

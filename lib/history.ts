@@ -5,9 +5,10 @@ import { changeLogs, services } from "./db/schema";
 import type { AppDb } from "./db/types";
 import { formatDateTime } from "./format";
 import { fieldLabel, targetLabel } from "./evidence/labels";
+import { roiLabel } from "./roi";
 
 export type HistoryTarget = (typeof changeLogs.$inferSelect)["targetType"];
-export const HISTORY_TARGETS: HistoryTarget[] = ["monthly_input", "monthly_security", "survey_setting", "account", "infra_metric"];
+export const HISTORY_TARGETS: HistoryTarget[] = ["monthly_input", "monthly_security", "survey_setting", "account", "infra_metric", "roi_input"];
 
 export type HistoryFilter = {
   from?: string; // YYYY-MM-DD (한국 시간)
@@ -68,6 +69,8 @@ export async function loadHistory(db: AppDb, filter: HistoryFilter = {}): Promis
       const [serviceId, period] = row.targetId.split(":");
       object = `${nameOf.get(serviceId) ?? `서비스 ${serviceId}`} ${period ?? ""}`.trim();
     }
+
+    if (row.targetType === "roi_input") object = roiLabel(row.targetId);
 
     const display = (value: string | null) => {
       if (value === null) return "-";

@@ -7,6 +7,7 @@ import { InfraCockpit } from "./InfraCockpit";
 
 import { changeRate, formatPercent, formatScore, NO_DATA } from "@/lib/format";
 import type { InfraSnapshot } from "@/lib/infra";
+import type { RoiResult } from "@/lib/roi";
 import { spaceEvents, type SpaceEvent, type SpaceEventKind } from "@/lib/score/events";
 import type { ServiceStatus, ServiceStatusKind } from "@/lib/score/status";
 import { rankServices, type EvidenceGrade, type MonthScore, type ScoreSetting, type YearScore } from "@/lib/score";
@@ -28,6 +29,7 @@ type Props = {
   isAdmin: boolean;
   chart?: ReactNode;
   statuses?: ServiceStatus[]; // 서비스 상태등. 없으면 카드를 그리지 않는다.
+  roi?: RoiResult | null; // 추정 ROI. 계기판 가운데에 보여 준다.
   infra?: InfraSnapshot | null; // AI 인프라 계기판. undefined면 카드를 그리지 않고, null이면 "데이터 없음"으로 그린다.
 };
 
@@ -54,8 +56,8 @@ function Delta({ current, previous }: { current: number | null; previous: number
   const up = rate > 0;
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-mono text-[11px] font-medium ${
-        flat ? "bg-white/10 text-zinc-400" : up ? "bg-cyan-400/15 text-cyan-300" : "bg-pink-500/15 text-pink-300"
+      className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-mono text-xs font-medium ${
+        flat ? "bg-white/10 text-zinc-300" : up ? "bg-cyan-400/15 text-cyan-300" : "bg-pink-500/15 text-pink-300"
       }`}
       title="전월 대비"
     >
@@ -117,7 +119,7 @@ function StatusStrip({ statuses }: { statuses: ServiceStatus[] }) {
                     {status.serviceName}
                     <span className={`text-xs ${style.text}`}>{style.label}</span>
                   </p>
-                  {status.reasons.length > 0 && <p className="text-[11px] text-zinc-500">{status.reasons.join(" · ")}</p>}
+                  {status.reasons.length > 0 && <p className="text-xs text-zinc-400">{status.reasons.join(" · ")}</p>}
                 </div>
               </li>
             );
@@ -153,7 +155,7 @@ function EventsCard({ events }: { events: SpaceEvent[] }) {
         <h2 className="text-lg font-bold">우주 이벤트</h2>
       </div>
       {events.length === 0 ? (
-        <p className="text-sm text-zinc-500">이벤트 없음</p>
+        <p className="text-sm text-zinc-400">이벤트 없음</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {events.map((event) => {
@@ -165,7 +167,7 @@ function EventsCard({ events }: { events: SpaceEvent[] }) {
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold">{event.title}</p>
-                  {(event.kind === "surge" || event.kind === "rank-up") && <p className="text-xs text-zinc-400">{event.detail}</p>}
+                  {(event.kind === "surge" || event.kind === "rank-up") && <p className="text-xs text-zinc-300">{event.detail}</p>}
                 </div>
               </li>
             );
@@ -207,7 +209,7 @@ function SummaryCards({
         <p className="neon-text mt-4 font-mono text-6xl font-bold tabular-nums tracking-tighter sm:text-7xl">
           {formatScore(yearScore.countedMonths.length === 0 ? null : yearScore.annualTotal)}
         </p>
-        <p className="mt-5 flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+        <p className="mt-5 flex flex-wrap items-center gap-2 text-xs text-zinc-300">
           <span className="rounded-full border border-white/10 px-3 py-1">{yearScore.countedMonths.length}개월 합산</span>
           {top && (
             <span className="rounded-full bg-fuchsia-500/20 px-3 py-1 font-medium text-fuchsia-200">
@@ -224,7 +226,7 @@ function SummaryCards({
             <p className="font-mono text-4xl font-bold tabular-nums tracking-tight text-white">{formatScore(focus.total)}</p>
             <Delta current={focus.total} previous={previous?.total ?? null} />
           </div>
-          {monthNote(focus) && <p className="mt-2 text-xs text-zinc-500">{monthNote(focus)}</p>}
+          {monthNote(focus) && <p className="mt-2 text-xs text-zinc-400">{monthNote(focus)}</p>}
         </div>
 
         <div className={cardClass}>
@@ -303,7 +305,7 @@ function MonthlyTable({ focus, previous }: { focus: MonthScore; previous: MonthS
         <div>
           <h2 className="text-lg font-bold">서비스별 월 지수</h2>
         </div>
-        <p className="flex items-center gap-3 text-xs text-zinc-400">
+        <p className="flex items-center gap-3 text-xs text-zinc-300">
           <span className="flex items-center gap-1.5">
             <GradeDot grade="실측" label="범례" />
             실측
@@ -316,7 +318,7 @@ function MonthlyTable({ focus, previous }: { focus: MonthScore; previous: MonthS
       </div>
 
       {!hasData ? (
-        <p className="text-sm text-zinc-500">{NO_DATA}</p>
+        <p className="text-sm text-zinc-400">{NO_DATA}</p>
       ) : (
         <>
           <ul className="flex flex-col gap-4">
@@ -333,7 +335,7 @@ function MonthlyTable({ focus, previous }: { focus: MonthScore; previous: MonthS
                 </div>
                 <span className="flex min-w-[13rem] items-center justify-end gap-2 font-mono text-sm tabular-nums">
                   {service.score === null ? (
-                    <span className="text-xs text-zinc-500">{NO_DATA}</span>
+                    <span className="text-xs text-zinc-400">{NO_DATA}</span>
                   ) : (
                     <>
                       <Delta current={service.score} previous={previous?.services[index]?.score ?? null} />
@@ -350,11 +352,11 @@ function MonthlyTable({ focus, previous }: { focus: MonthScore; previous: MonthS
           <div className="flex items-center justify-between border-t border-white/10 pt-4">
             <span className="font-bold">합계</span>
             {focus.total === null ? (
-              <span className="text-sm text-zinc-500">{NO_DATA}</span>
+              <span className="text-sm text-zinc-400">{NO_DATA}</span>
             ) : (
               <span className="flex items-center gap-3">
                 {focus.penaltyApplied && (
-                  <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-[11px] font-medium text-red-300">보안사고 -50%</span>
+                  <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-medium text-red-300">보안사고 -50%</span>
                 )}
                 <span className="neon-text font-mono text-2xl font-bold tabular-nums">{formatScore(focus.total)}</span>
               </span>
@@ -369,10 +371,10 @@ function MonthlyTable({ focus, previous }: { focus: MonthScore; previous: MonthS
 function Metric({ label, value, unit }: { label: string; value: number; unit: string }) {
   return (
     <div className="rounded-lg bg-zinc-800/60 px-3 py-2">
-      <p className="text-[11px] text-zinc-400">{label}</p>
+      <p className="text-xs text-zinc-300">{label}</p>
       <p className="text-lg font-bold tabular-nums">
         {value.toLocaleString("ko-KR")}
-        <span className="ml-0.5 text-xs font-normal text-zinc-400">{unit}</span>
+        <span className="ml-0.5 text-xs font-normal text-zinc-300">{unit}</span>
       </p>
     </div>
   );
@@ -389,7 +391,7 @@ function SurveyHalf({ row }: { row: ScoreSetting }) {
         <span className="rounded-full bg-pink-500/15 px-2.5 py-0.5 text-xs font-bold text-pink-300">
           {row.half === "H1" ? "상반기" : "하반기"}
         </span>
-        <span className="text-xs text-zinc-400">
+        <span className="text-xs text-zinc-300">
           {row.survey?.aggregation ? aggregationLabel(row.survey.aggregation) : NOT_RECORDED}
         </span>
       </div>
@@ -397,12 +399,12 @@ function SurveyHalf({ row }: { row: ScoreSetting }) {
       <div>
         <div className="flex items-baseline justify-between">
           <span className="text-2xl font-bold tabular-nums">{formatResponseRate(respondents, target)}</span>
-          <span className="text-xs text-zinc-400">{formatRespondents(respondents, target)}</span>
+          <span className="text-xs text-zinc-300">{formatRespondents(respondents, target)}</span>
         </div>
         <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-800" aria-hidden>
           <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-400 shadow-[0_0_8px_rgba(236,72,153,0.6)]" style={{ width: `${Math.min(100, rate ?? 0)}%` }} />
         </div>
-        <p className="mt-1 text-[11px] text-zinc-500">
+        <p className="mt-1 text-xs text-zinc-400">
           응답률 · {formatSurveyPeriod(row.survey?.surveyStart ?? null, row.survey?.surveyEnd ?? null)}
         </p>
       </div>
@@ -425,7 +427,7 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
         <h2 className="text-lg font-bold">설문 정보</h2>
       </div>
       {serviceIds.length === 0 ? (
-        <p className="text-sm text-zinc-500">{NO_DATA}</p>
+        <p className="text-sm text-zinc-400">{NO_DATA}</p>
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {serviceIds.map((id) => (
@@ -446,7 +448,7 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
   );
 }
 
-export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart, statuses, infra }: Props) {
+export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart, statuses, infra, roi = null }: Props) {
   const found = yearScore.months.findIndex((month) => month.yearMonth === focusMonth);
   const focusIndex = found === -1 ? 11 : found;
   const focus = yearScore.months[focusIndex];
@@ -493,7 +495,7 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
       <SurveyTable settings={settings} serviceNames={serviceNames} />
 
       {/* 화면 하단에 고정되는 AI 인프라 계기판 */}
-      {infra !== undefined && <InfraCockpit snapshot={infra} yearMonth={focus.yearMonth} isAdmin={isAdmin} />}
+      {infra !== undefined && <InfraCockpit snapshot={infra} yearMonth={focus.yearMonth} isAdmin={isAdmin} roi={roi} />}
     </div>
   );
 }

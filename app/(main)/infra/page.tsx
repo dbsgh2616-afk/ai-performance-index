@@ -8,7 +8,10 @@ import { getDb } from "@/lib/db";
 import { loadInfra } from "@/lib/infra";
 import { YEAR_MONTH_PATTERN } from "@/lib/validation/inputs";
 
+import { loadRoiInputs } from "@/lib/roi";
+
 import { InfraForm } from "./infra-form";
+import { RoiForm } from "./roi-form";
 
 export default function InfraPage({ searchParams }: PageProps<"/infra">) {
   return (
@@ -25,6 +28,7 @@ async function InfraContent({ searchParams }: { searchParams: PageProps<"/infra"
   const requested = typeof month === "string" ? month : "";
   const yearMonth = YEAR_MONTH_PATTERN.test(requested) ? requested : currentYearMonth();
   const snapshot = await loadInfra(getDb(), yearMonth);
+  const roiValues = await loadRoiInputs(getDb());
 
   return (
     <div className="flex flex-col gap-6">
@@ -46,6 +50,8 @@ async function InfraContent({ searchParams }: { searchParams: PageProps<"/infra"
       </form>
 
       <InfraForm key={yearMonth} yearMonth={yearMonth} snapshot={snapshot} />
+
+      <RoiForm values={roiValues} />
     </div>
   );
 }

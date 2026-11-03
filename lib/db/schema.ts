@@ -35,6 +35,7 @@ export const changeTargetEnum = pgEnum("change_target", [
   "survey_setting", // 반기별 설문 설정값
   "account", // 계정
   "infra_metric", // 월별 AI 인프라 지표 (GPU·메모리·스토리지·가동률)
+  "roi_input", // ROI 계산에 쓰는 인프라 도입비용·운영비·단가
 ]);
 
 // AI 서비스 6개. 추가·삭제 기능은 만들지 않는다. (PRD 6번)
@@ -130,6 +131,19 @@ export const infraMetrics = pgTable(
     check("infra_metrics_uptime_ck", sql`${t.uptimePct} between 0 and 100`),
   ],
 );
+
+// ROI 계산 재료. 항목(key)마다 1줄이고 항목 목록은 lib/roi.ts의 ROI_FIELDS가 정한다.
+// 인프라 도입비용 항목들, 연간 운영비, 내용연수, 시간당 인건비 단가가 들어 있다. (금액은 원)
+export const roiInputs = pgTable("roi_inputs", {
+  key: text("key").primaryKey(),
+  value: numeric("value", { precision: 18, scale: 2, mode: "number" }).notNull(),
+  enteredById: integer("entered_by_id").notNull(),
+  enteredByName: text("entered_by_name").notNull(),
+  enteredAt: timestamp("entered_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
 
 // 월마다 1줄. 보안사고가 있는 달은 서비스 6개 합산 점수를 50% 감점한다.
 // 기록이 없는 달은 "사고 없음"으로 본다. (DESIGN 5.2)
@@ -227,5 +241,6 @@ export type Account = typeof accounts.$inferSelect;
 export type MonthlyInput = typeof monthlyInputs.$inferSelect;
 export type MonthlySecurity = typeof monthlySecurity.$inferSelect;
 export type InfraMetric = typeof infraMetrics.$inferSelect;
+export type RoiInputRow = typeof roiInputs.$inferSelect;
 export type SurveySetting = typeof surveySettings.$inferSelect;
 export type ChangeLog = typeof changeLogs.$inferSelect;
