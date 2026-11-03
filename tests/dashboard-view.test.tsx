@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { DashboardView } from "../components/dashboard/DashboardView";
-import { formatPercent, formatScore } from "../lib/format";
+import { changeRate, formatPercent, formatScore } from "../lib/format";
 import { calculateYear, type ScoreData } from "../lib/score";
 
 const NAMES = ["KOBI", "KOBI+", "국유변화탐지", "슈퍼로이어", "성과나침반", "온비드 AI요약"];
@@ -69,6 +69,14 @@ describe("숫자 표시", () => {
     expect(formatPercent(66.666)).toBe("66.7%");
     expect(formatPercent(null)).toBe("-");
   });
+
+  it("전월 대비 증감률: 전월이 없거나 0이면 계산하지 않는다", () => {
+    expect(changeRate(150, 100)).toBe(50);
+    expect(changeRate(50, 100)).toBe(-50);
+    expect(changeRate(100, null)).toBeNull();
+    expect(changeRate(null, 100)).toBeNull();
+    expect(changeRate(100, 0)).toBeNull();
+  });
 });
 
 describe("대시보드 화면", () => {
@@ -117,6 +125,33 @@ describe("대시보드 화면", () => {
     const html = render(["2026-10"], ["2026-10"]);
     expect(html).toContain("보안사고 -50%");
     expect(html).toContain("50% 감점 적용");
+  });
+
+  it("전월 대비 증감률을 ▲▼로 보여준다 (오른 서비스는 ▲, 내린 서비스는 ▼)", () => {
+    const scoreData = data(["2026-09", "2026-10"]);
+    // 10월에 서비스 2는 호출횟수가 2배, 서비스 3은 절반이 된다.
+    for (const input of scoreData.inputs) {
+      if (input.yearMonth !== "2026-10") continue;
+      if (input.serviceId === 2) input.callCount *= 2;
+      if (input.serviceId === 3) input.callCount /= 2;
+    }
+    const html = renderToStaticMarkup(
+      <DashboardView
+        yearScore={calculateYear(scoreData)}
+        settings={scoreData.settings}
+        serviceNames={SERVICE_NAMES}
+        focusMonth="2026-10"
+        focusLabel="이번 달"
+        isAdmin
+      />,
+    );
+    expect(html).toContain("▲ 100%");
+    expect(html).toContain("▼ 50%");
+    expect(html).toContain("– 0%");
+  });
+
+  it("전월 입력이 없으면 증감률을 그리지 않는다", () => {
+    expect(render(["2026-10"])).not.toContain("전월 대비");
   });
 
   it("증적자료 바로가기는 관리자에게만 보인다", () => {

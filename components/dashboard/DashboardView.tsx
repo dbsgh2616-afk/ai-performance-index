@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { formatMonthLabel, formatPercent, formatScore, NO_DATA } from "@/lib/format";
+import { changeRate, formatMonthLabel, formatPercent, formatScore, NO_DATA } from "@/lib/format";
 import { rankServices, type EvidenceGrade, type MonthScore, type ScoreSetting, type YearScore } from "@/lib/score";
 import {
   aggregationLabel,
@@ -42,7 +42,37 @@ function monthNote(month: MonthScore): string | undefined {
   return undefined;
 }
 
-function SummaryCards({ yearScore, focus, focusLabel }: { yearScore: YearScore; focus: MonthScore; focusLabel: string }) {
+// 전월 대비 증감 표시. 오르면 시안 ▲, 내리면 핑크 ▼. 비교할 전월 값이 없으면 아무것도 그리지 않는다.
+function Delta({ current, previous }: { current: number | null; previous: number | null }) {
+  const rate = changeRate(current, previous);
+  if (rate === null) return null;
+  const text = Math.abs(rate).toLocaleString("ko-KR", { maximumFractionDigits: 1 });
+  // 소수 첫째 자리까지 봐서 0.0%이면 변화 없음으로 본다.
+  const flat = text === "0";
+  const up = rate > 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-mono text-[11px] font-medium ${
+        flat ? "bg-white/10 text-zinc-400" : up ? "bg-cyan-400/15 text-cyan-300" : "bg-pink-500/15 text-pink-300"
+      }`}
+      title="전월 대비"
+    >
+      {flat ? "–" : up ? "▲" : "▼"} {text}%
+    </span>
+  );
+}
+
+function SummaryCards({
+  yearScore,
+  focus,
+  focusLabel,
+  previous,
+}: {
+  yearScore: YearScore;
+  focus: MonthScore;
+  focusLabel: string;
+  previous: MonthScore | undefined;
+}) {
   const ranking = rankServices(yearScore);
   const top = ranking[0]?.rank === 1 ? ranking[0] : undefined;
   const share = yearScore.surveyShare;
@@ -70,7 +100,10 @@ function SummaryCards({ yearScore, focus, focusLabel }: { yearScore: YearScore; 
         <div className={cardClass}>
           <Eyebrow>Month</Eyebrow>
           <p className="mt-1 text-sm font-medium text-zinc-300">{focusLabel} 합계</p>
-          <p className="mt-3 font-mono text-4xl font-bold tabular-nums tracking-tight text-white">{formatScore(focus.total)}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <p className="font-mono text-4xl font-bold tabular-nums tracking-tight text-white">{formatScore(focus.total)}</p>
+            <Delta current={focus.total} previous={previous?.total ?? null} />
+          </div>
           <p className="mt-2 text-xs text-zinc-500">{monthNote(focus) ?? "서비스 6개 모두 계산됨"}</p>
         </div>
 
@@ -143,7 +176,7 @@ function GradeDot({ grade, label }: { grade: EvidenceGrade | null; label: string
   return <span className={`h-1.5 w-1.5 rounded-full ${color}`} title={`${label}: ${grade}`} />;
 }
 
-function MonthlyTable({ focus, focusLabel }: { focus: MonthScore; focusLabel: string }) {
+function MonthlyTable({ focus, focusLabel, previous }: { focus: MonthScore; focusLabel: string; previous: MonthScore | undefined }) {
   const hasData = focus.services.some((service) => service.callCount !== null);
   // 막대 길이는 그 달에서 가장 높은 서비스를 100%로 본다.
   const maxScore = Math.max(1, ...focus.services.map((service) => service.score ?? 0));
@@ -175,7 +208,7 @@ function MonthlyTable({ focus, focusLabel }: { focus: MonthScore; focusLabel: st
       ) : (
         <>
           <ul className="flex flex-col gap-4">
-            {focus.services.map((service) => (
+            {focus.services.map((service, index) => (
               <li key={service.serviceId} className="grid grid-cols-[8rem_1fr_auto] items-center gap-4">
                 <span className="flex items-center gap-2 truncate text-sm font-medium text-zinc-200">
                   {service.serviceName}
@@ -186,14 +219,15 @@ function MonthlyTable({ focus, focusLabel }: { focus: MonthScore; focusLabel: st
                     style={{ width: `${service.score === null ? 0 : (service.score / maxScore) * 100}%` }}
                   />
                 </div>
-                <span className="flex min-w-[8rem] items-center justify-end gap-2 font-mono text-sm tabular-nums">
+                <span className="flex min-w-[13rem] items-center justify-end gap-2 font-mono text-sm tabular-nums">
                   {service.score === null ? (
                     <span className="text-xs text-zinc-500">{NO_DATA}</span>
                   ) : (
                     <>
+                      <Delta current={service.score} previous={previous?.services[index]?.score ?? null} />
                       <GradeDot grade={service.grades.callCount} label="호출횟수" />
                       <GradeDot grade={service.grades.setting} label="업무절감시간·업무기여도" />
-                      <span className="font-semibold text-white">{formatScore(service.score)}</span>
+                      <span className="w-20 text-right font-semibold text-white">{formatScore(service.score)}</span>
                     </>
                   )}
                 </span>
@@ -304,11 +338,15 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
 }
 
 export function DashboardView({ yearScore, settings, serviceNames, focusMonth, focusLabel, isAdmin, chart }: Props) {
-  const focus = yearScore.months.find((month) => month.yearMonth === focusMonth) ?? yearScore.months[11];
+  const found = yearScore.months.findIndex((month) => month.yearMonth === focusMonth);
+  const focusIndex = found === -1 ? 11 : found;
+  const focus = yearScore.months[focusIndex];
+  // 전월 대비 비교용. 1월은 작년 12월 데이터가 이 화면에 없어서 비교하지 않는다.
+  const previous = yearScore.months[focusIndex - 1];
 
   return (
     <div className="flex flex-col gap-6">
-      <SummaryCards yearScore={yearScore} focus={focus} focusLabel={focusLabel} />
+      <SummaryCards yearScore={yearScore} focus={focus} focusLabel={focusLabel} previous={previous} />
 
       {isAdmin && (
         <p className="text-sm">
@@ -327,7 +365,7 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
         </div>
       </div>
 
-      <MonthlyTable focus={focus} focusLabel={focusLabel} />
+      <MonthlyTable focus={focus} focusLabel={focusLabel} previous={previous} />
       <SurveyTable settings={settings} serviceNames={serviceNames} />
     </div>
   );

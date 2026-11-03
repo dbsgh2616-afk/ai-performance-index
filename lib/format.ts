@@ -13,6 +13,12 @@ export function formatPercent(value: number | null): string {
   return `${value.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%`;
 }
 
+// 전월 대비 증감률(%). 비교할 값이 없거나 전월이 0이면 null (나눌 수 없다)
+export function changeRate(current: number | null, previous: number | null): number | null {
+  if (current === null || previous === null || previous === 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
 // 한국 시간 기준 "2026-11-02 16:05"
 export function formatDateTime(value: Date | string): string {
   return new Date(value).toLocaleString("sv-SE", { timeZone: "Asia/Seoul" }).slice(0, 16);
