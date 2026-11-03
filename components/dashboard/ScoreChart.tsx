@@ -39,9 +39,7 @@ export function ScoreChart({ months }: { months: GaugeMonth[] }) {
   return (
     <figure className="flex h-full flex-col gap-3">
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-fuchsia-300/70">02 / Flight path</p>
-        <figcaption className="mt-1 text-xl font-bold">월별 AI 지수</figcaption>
-        <p className="text-xs text-zinc-500">달마다 서비스 6개의 합계를 이은 항로입니다. 우주선이 이번 달 위치입니다.</p>
+        <figcaption className="text-xl font-bold">월별 AI 지수</figcaption>
       </div>
 
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="h-auto w-full" role="img" aria-label="월별 AI 지수 선그래프">
@@ -133,10 +131,6 @@ export function ScoreChart({ months }: { months: GaugeMonth[] }) {
           </g>
         )}
       </svg>
-
-      <p className="text-xs text-zinc-500">
-        서비스 6개가 모두 계산된 달만 이어집니다. <span className="text-rose-300">붉은 별</span>은 보안사고 감점(-50%)이 반영된 달입니다.
-      </p>
     </figure>
   );
 }

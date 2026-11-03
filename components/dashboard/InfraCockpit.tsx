@@ -198,7 +198,7 @@ export function InfraCockpit({ snapshot, yearMonth, isAdmin }: { snapshot: Infra
         <details open className="cockpit-dash group relative overflow-hidden">
           <summary className="relative z-10 flex cursor-pointer list-none items-center justify-center gap-3 px-6 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-200/80 marker:hidden [&::-webkit-details-marker]:hidden">
             <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300 shadow-[0_0_8px_#67e8f9]" aria-hidden />
-            Cockpit · AI 인프라 계기판
+            AI 인프라
             <span className="text-zinc-400 group-open:hidden">▲ 열기</span>
             <span className="hidden text-zinc-400 group-open:inline">▼ 접기</span>
           </summary>
@@ -211,7 +211,7 @@ export function InfraCockpit({ snapshot, yearMonth, isAdmin }: { snapshot: Infra
           <div className="relative px-3 pb-4 pt-1 sm:px-6 lg:px-[4vw]">
             {snapshot === null ? (
               <p className="py-6 text-center text-sm text-zinc-400">
-                데이터 없음 — 이 달의 인프라 지표가 아직 입력되지 않았습니다.
+                데이터 없음
                 {isAdmin && (
                   <Link href={`/infra?month=${yearMonth}`} className="ml-2 font-medium text-fuchsia-400 underline underline-offset-4 hover:text-fuchsia-300">
                     값 입력하기 →

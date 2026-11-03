@@ -112,7 +112,6 @@ describe("대시보드 화면", () => {
 
   it("서비스별 월 지수는 선택한 달(당월)만 보여준다", () => {
     const html = render(["2026-09", "2026-10"]);
-    expect(html).toContain("이번 달 · 10월 기준");
     expect(html).not.toContain("9월");
     expect(html).not.toContain("입력이 없는 달");
   });
@@ -180,7 +179,7 @@ describe("대시보드 화면", () => {
 
   it("우주 이벤트 카드는 항상 보이고, 이벤트가 없으면 잔잔하다는 안내를 보여준다", () => {
     expect(render(["2026-10"])).toContain("우주 이벤트");
-    expect(render([])).toContain("특별한 이벤트가 없습니다");
+    expect(render([])).toContain("이벤트 없음");
   });
 
   it("보안사고가 있는 달에는 이벤트 카드에 경보가 나온다", () => {

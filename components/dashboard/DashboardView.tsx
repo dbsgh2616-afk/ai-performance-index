@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 import { InfraCockpit } from "./InfraCockpit";
 
-import { changeRate, formatMonthLabel, formatPercent, formatScore, NO_DATA } from "@/lib/format";
+import { changeRate, formatPercent, formatScore, NO_DATA } from "@/lib/format";
 import type { InfraSnapshot } from "@/lib/infra";
 import { spaceEvents, type SpaceEvent, type SpaceEventKind } from "@/lib/score/events";
 import type { ServiceStatus, ServiceStatusKind } from "@/lib/score/status";
@@ -33,11 +33,6 @@ type Props = {
 
 // 유리 질감 카드. 색은 포인트에만 쓴다. (app/globals.css의 glass 유틸리티)
 const cardClass = "glass rounded-3xl p-6";
-
-// 카드 위쪽의 작은 영문 라벨 (예: 01 / RANKING)
-function Eyebrow({ children }: { children: ReactNode }) {
-  return <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-fuchsia-300/70">{children}</p>;
-}
 
 function monthNote(month: MonthScore): string | undefined {
   if (month.total === null) {
@@ -78,16 +73,14 @@ const STATUS_STYLE: Record<ServiceStatusKind, { label: string; dot: string; text
 const SATELLITE_RADIUS = 88; // px
 
 // 서비스별 상태등: 행성 둘레를 도는 위성으로 그린다. 이번 달 누가 자료를 보냈는지(교신) 한눈에 보여 준다.
-function StatusStrip({ statuses, focusLabel }: { statuses: ServiceStatus[]; focusLabel: string }) {
+function StatusStrip({ statuses }: { statuses: ServiceStatus[] }) {
   const doneCount = statuses.filter((status) => status.kind === "done").length;
 
   return (
     <section aria-label="서비스 상태등" className={`${cardClass} flex h-full flex-col gap-5`}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <Eyebrow>Satellite link</Eyebrow>
-          <h2 className="mt-1 text-lg font-bold">서비스 상태등</h2>
-          <p className="text-xs text-zinc-500">{focusLabel} 기준 교신 상황입니다. 위성 하나가 서비스 하나입니다.</p>
+          <h2 className="text-lg font-bold">서비스 상태등</h2>
         </div>
         <p className="font-mono text-sm text-zinc-300">
           <span className="text-2xl font-bold text-white">{doneCount}</span> / {statuses.length} 교신 완료
@@ -145,7 +138,7 @@ const EVENT_GLYPH: Record<SpaceEventKind, { glyph: string; color: string }> = {
 };
 
 // 우주 이벤트: 이번 달에 생긴 눈에 띄는 일. 신기록이 있으면 유성이 지나간다.
-function EventsCard({ events, focusLabel }: { events: SpaceEvent[]; focusLabel: string }) {
+function EventsCard({ events }: { events: SpaceEvent[] }) {
   const celebrate = events.some((event) => event.kind === "record" || event.kind === "service-record" || event.kind === "milestone");
 
   return (
@@ -157,12 +150,10 @@ function EventsCard({ events, focusLabel }: { events: SpaceEvent[]; focusLabel: 
         </>
       )}
       <div>
-        <Eyebrow>Event log</Eyebrow>
-        <h2 className="mt-1 text-lg font-bold">우주 이벤트</h2>
-        <p className="text-xs text-zinc-500">{focusLabel}에 감지된 소식입니다.</p>
+        <h2 className="text-lg font-bold">우주 이벤트</h2>
       </div>
       {events.length === 0 ? (
-        <p className="text-sm text-zinc-500">잔잔한 우주입니다. 이번 달은 특별한 이벤트가 없습니다.</p>
+        <p className="text-sm text-zinc-500">이벤트 없음</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {events.map((event) => {
@@ -174,7 +165,7 @@ function EventsCard({ events, focusLabel }: { events: SpaceEvent[]; focusLabel: 
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold">{event.title}</p>
-                  <p className="text-xs text-zinc-400">{event.detail}</p>
+                  {(event.kind === "surge" || event.kind === "rank-up") && <p className="text-xs text-zinc-400">{event.detail}</p>}
                 </div>
               </li>
             );
@@ -212,7 +203,6 @@ function SummaryCards({
             <span className="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 shadow-[0_0_12px_#67e8f9]" />
           </div>
         </div>
-        <Eyebrow>Annual index</Eyebrow>
         <p className="mt-1 text-sm font-medium text-zinc-300">{yearScore.year}년 연간 누적 지수</p>
         <p className="neon-text mt-4 font-mono text-6xl font-bold tabular-nums tracking-tighter sm:text-7xl">
           {formatScore(yearScore.countedMonths.length === 0 ? null : yearScore.annualTotal)}
@@ -229,17 +219,15 @@ function SummaryCards({
 
       <div className="grid gap-4 lg:col-span-2">
         <div className={cardClass}>
-          <Eyebrow>Current cycle</Eyebrow>
           <p className="mt-1 text-sm font-medium text-zinc-300">{focusLabel} 합계</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <p className="font-mono text-4xl font-bold tabular-nums tracking-tight text-white">{formatScore(focus.total)}</p>
             <Delta current={focus.total} previous={previous?.total ?? null} />
           </div>
-          <p className="mt-2 text-xs text-zinc-500">{monthNote(focus) ?? "서비스 6개 모두 계산됨"}</p>
+          {monthNote(focus) && <p className="mt-2 text-xs text-zinc-500">{monthNote(focus)}</p>}
         </div>
 
         <div className={cardClass}>
-          <Eyebrow>Signal source</Eyebrow>
           <div className="mt-1 flex items-end justify-between gap-3">
             <p className="text-sm font-medium text-zinc-300">설문 추정 비중</p>
             <p className="font-mono text-3xl font-bold tabular-nums text-pink-300">{formatPercent(share)}</p>
@@ -247,7 +235,6 @@ function SummaryCards({
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden>
             <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500" style={{ width: `${share ?? 0}%` }} />
           </div>
-          <p className="mt-2 text-xs text-zinc-500">호출횟수(실측), 업무절감시간·업무기여도(설문 추정) 중 설문 값의 비율</p>
         </div>
       </div>
     </section>
@@ -260,9 +247,7 @@ function RankingCard({ yearScore }: { yearScore: YearScore }) {
   return (
     <section aria-label="서비스 순위" className={`${cardClass} flex h-full flex-col gap-5`}>
       <div>
-        <Eyebrow>01 / Orbit rank</Eyebrow>
-        <h2 className="mt-1 text-lg font-bold">서비스 순위</h2>
-        <p className="text-xs text-zinc-500">{yearScore.year}년 연간 누적 점수 기준 (점수가 계산된 달의 합)</p>
+        <h2 className="text-lg font-bold">서비스 순위</h2>
       </div>
       <ol className="flex flex-col gap-4">
         {ranking.map((row) => {
@@ -307,7 +292,7 @@ function GradeDot({ grade, label }: { grade: EvidenceGrade | null; label: string
   return <span className={`h-1.5 w-1.5 rounded-full ${color}`} title={`${label}: ${grade}`} />;
 }
 
-function MonthlyTable({ focus, focusLabel, previous }: { focus: MonthScore; focusLabel: string; previous: MonthScore | undefined }) {
+function MonthlyTable({ focus, previous }: { focus: MonthScore; previous: MonthScore | undefined }) {
   const hasData = focus.services.some((service) => service.callCount !== null);
   // 막대 길이는 그 달에서 가장 높은 서비스를 100%로 본다.
   const maxScore = Math.max(1, ...focus.services.map((service) => service.score ?? 0));
@@ -316,11 +301,7 @@ function MonthlyTable({ focus, focusLabel, previous }: { focus: MonthScore; focu
     <section aria-label="서비스별 월 지수" className={`${cardClass} flex flex-col gap-5`}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <Eyebrow>03 / Telemetry</Eyebrow>
-          <h2 className="mt-1 text-lg font-bold">서비스별 월 지수</h2>
-          <p className="text-xs text-zinc-500">
-            {focusLabel === formatMonthLabel(focus.yearMonth) ? focusLabel : `${focusLabel} · ${formatMonthLabel(focus.yearMonth)}`} 기준
-          </p>
+          <h2 className="text-lg font-bold">서비스별 월 지수</h2>
         </div>
         <p className="flex items-center gap-3 text-xs text-zinc-400">
           <span className="flex items-center gap-1.5">
@@ -335,7 +316,7 @@ function MonthlyTable({ focus, focusLabel, previous }: { focus: MonthScore; focu
       </div>
 
       {!hasData ? (
-        <p className="text-sm text-zinc-500">{NO_DATA} — 이 달에 입력된 값이 없습니다.</p>
+        <p className="text-sm text-zinc-500">{NO_DATA}</p>
       ) : (
         <>
           <ul className="flex flex-col gap-4">
@@ -379,7 +360,6 @@ function MonthlyTable({ focus, focusLabel, previous }: { focus: MonthScore; focu
               </span>
             )}
           </div>
-          <p className="text-xs text-zinc-500">서비스 6개가 모두 계산된 달만 합계를 냅니다.</p>
         </>
       )}
     </section>
@@ -442,12 +422,10 @@ function SurveyTable({ settings, serviceNames }: { settings: ScoreSetting[]; ser
   return (
     <section aria-label="설문 정보" className={`${cardClass} flex flex-col gap-4`}>
       <div>
-        <Eyebrow>04 / Field survey</Eyebrow>
-        <h2 className="mt-1 text-lg font-bold">설문 정보</h2>
-        <p className="text-xs text-zinc-500">업무절감시간·업무기여도가 어떤 조사에서 나왔는지 보여주는 근거입니다.</p>
+        <h2 className="text-lg font-bold">설문 정보</h2>
       </div>
       {serviceIds.length === 0 ? (
-        <p className="text-sm text-zinc-500">{NO_DATA} — 입력된 설문 설정값이 없습니다.</p>
+        <p className="text-sm text-zinc-500">{NO_DATA}</p>
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {serviceIds.map((id) => (
@@ -489,18 +467,18 @@ export function DashboardView({ yearScore, settings, serviceNames, focusMonth, f
           <RankingCard yearScore={yearScore} />
         </div>
         <div className="lg:col-span-3">
-          <MonthlyTable focus={focus} focusLabel={focusLabel} previous={previous} />
+          <MonthlyTable focus={focus} previous={previous} />
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-5">
         {statuses && (
           <div className="lg:col-span-3">
-            <StatusStrip statuses={statuses} focusLabel={focusLabel} />
+            <StatusStrip statuses={statuses} />
           </div>
         )}
         <div className={statuses ? "lg:col-span-2" : "lg:col-span-5"}>
-          <EventsCard events={events} focusLabel={focusLabel} />
+          <EventsCard events={events} />
         </div>
       </div>
 

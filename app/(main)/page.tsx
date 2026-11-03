@@ -51,8 +51,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/">
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-fuchsia-300/70">AI mission control · performance index</p>
-          <h1 className="neon-text mt-1 text-4xl font-bold tracking-tight">대시보드</h1>
+          <h1 className="neon-text text-4xl font-bold tracking-tight">대시보드</h1>
         </div>
         <form method="get" className="glass flex items-center gap-1 rounded-full p-1 pl-4">
           <label className="flex items-center gap-2 text-sm text-zinc-400">
